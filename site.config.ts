@@ -51,14 +51,14 @@ export const site: SiteConfig = {
    * nothing here you'd have to source or defend.
    */
   promises: [
-    { value: "72", unit: "hr", label: "First design in your inbox" },
-    { value: "100", unit: "/100", label: "Target Lighthouse performance score" },
-    { value: "3", unit: "×", label: "Revision rounds included, every build" },
-    { value: "0", prefix: "$", unit: "", label: "Cost to see a mockup of your site" },
+    { value: "72", unit: "hr", label: "Until a design of your homepage lands" },
+    { value: "2", unit: "hr", label: "Total time this asks of you, start to finish" },
+    { value: "16", unit: "", label: "Jobs we take off your desk, none billed extra" },
+    { value: "0", prefix: "$", unit: "", label: "To see your design before deciding" },
   ],
 
   /** Starting price shown in the hero + pricing section. */
-  startingPrice: "$1,200",
+  startingPrice: "$1,450",
 
   /**
    * Where the contact form posts. The site is a static export, so there is no

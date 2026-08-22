@@ -49,6 +49,7 @@ export function BeforeAfter() {
     <section className="relative py-20 sm:py-28">
       <Container>
         <SectionHead
+          index="01"
           eyebrow="The difference"
           title={
             <>

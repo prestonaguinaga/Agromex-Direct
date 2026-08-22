@@ -2,8 +2,9 @@
 
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { site } from "@/site.config";
+import { useBrief } from "./BriefContext";
 import { Button, Container, Reveal } from "./ui";
 
 const TRADES = [
@@ -42,6 +43,16 @@ export function Contact() {
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [presence, setPresence] = useState("none");
+
+  // Anything filled in upstairs in the brief builder lands here, so nobody is
+  // asked the same questions twice.
+  const { brief } = useBrief();
+  const [message, setMessage] = useState("");
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (brief && !touched) setMessage(brief);
+  }, [brief, touched]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -312,8 +323,21 @@ export function Contact() {
                       as="textarea"
                       required
                       error={errors.message}
+                      value={message}
+                      onChange={(v) => {
+                        setTouched(true);
+                        setMessage(v);
+                      }}
+                      rows={brief ? 12 : 4}
                       placeholder="Take bookings, show the menu, stop the phone ringing at dinner service — whatever's on your mind."
                     />
+
+                    {brief && !touched && (
+                      <p className="rounded-xl border border-neon/25 bg-neon/[0.06] px-4 py-3 text-xs leading-relaxed text-paper/80">
+                        Your brief from above is already in. Edit it however you like —
+                        then add your name and email and send it.
+                      </p>
+                    )}
 
                     {formError && (
                       <p
@@ -355,6 +379,9 @@ function Field({
   error,
   placeholder,
   autoComplete,
+  value,
+  onChange,
+  rows = 4,
 }: {
   label: string;
   name: string;
@@ -364,6 +391,9 @@ function Field({
   error?: string;
   placeholder?: string;
   autoComplete?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  rows?: number;
 }) {
   const base =
     "w-full rounded-xl border bg-ink px-4 py-3 text-sm text-paper placeholder:text-muted/45 transition-colors duration-200 hover:border-white/20 focus:border-neon/50";
@@ -382,7 +412,9 @@ function Field({
         <textarea
           id={name}
           name={name}
-          rows={4}
+          rows={rows}
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
           aria-invalid={!!error}
           aria-describedby={error ? `${name}-error` : undefined}

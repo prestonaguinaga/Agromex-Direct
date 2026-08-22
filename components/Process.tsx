@@ -52,6 +52,7 @@ export function Process() {
         <div className="grid gap-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
           <div className="lg:sticky lg:top-32 lg:self-start">
             <SectionHead
+              index="06"
               eyebrow="How it works"
               title="Fourteen days, and you never guess what happens next."
               lede="The whole process, start to finish. You see the design before any money changes hands."

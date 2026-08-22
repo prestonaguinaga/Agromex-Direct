@@ -8,10 +8,10 @@ import { Wordmark } from "./Wordmark";
 import { Button, Container } from "./ui";
 
 const LINKS = [
-  { label: "Work", href: "/#work" },
-  { label: "Services", href: "/#services" },
-  { label: "Process", href: "/#process" },
+  { label: "What we handle", href: "/#hard-stuff" },
+  { label: "Demos", href: "/#work" },
   { label: "Pricing", href: "/#pricing" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export function Nav() {
@@ -66,8 +66,8 @@ export function Nav() {
           </ul>
 
           <div className="hidden md:block">
-            <Button href="/#contact" className="!px-5 !py-2.5">
-              Get a free mockup
+            <Button href="/#brief" className="!px-5 !py-2.5">
+              Build your brief
             </Button>
           </div>
 
@@ -123,8 +123,8 @@ export function Nav() {
                 </motion.div>
               ))}
               <div className="pt-8">
-                <Button href="/#contact" className="w-full" >
-                  Get a free mockup
+                <Button href="/#brief" className="w-full" >
+                  Build your brief
                 </Button>
               </div>
             </Container>

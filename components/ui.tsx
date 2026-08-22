@@ -95,8 +95,8 @@ export function Button({
     intent === "solid"
       ? clsx(
           base,
-          "bg-neon text-ink shadow-[0_0_0_0_var(--color-neon)]",
-          "hover:shadow-[0_0_36px_-4px_var(--color-neon)] hover:brightness-110",
+          "bg-neon text-ink",
+          "hover:brightness-110",
           "active:scale-[0.98]"
         )
       : clsx(
@@ -202,11 +202,13 @@ export function CountUp({
 /* ────────────────────────────── SectionHead ────────────────────────────── */
 
 export function SectionHead({
+  index,
   eyebrow,
   title,
   lede,
   align = "left",
 }: {
+  index?: string;
   eyebrow: string;
   title: React.ReactNode;
   lede?: string;
@@ -220,7 +222,19 @@ export function SectionHead({
       )}
     >
       <Reveal>
-        <Eyebrow>{eyebrow}</Eyebrow>
+        <div
+          className={clsx(
+            "flex items-center gap-4",
+            align === "center" && "justify-center"
+          )}
+        >
+          {index && (
+            <span className="font-mono text-[0.6875rem] tracking-[0.22em] text-neon">
+              {index}
+            </span>
+          )}
+          <Eyebrow>{eyebrow}</Eyebrow>
+        </div>
       </Reveal>
       <Reveal delay={0.08}>
         <h2 className="display-lg text-balance max-w-3xl">{title}</h2>

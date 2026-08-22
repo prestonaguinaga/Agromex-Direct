@@ -12,6 +12,7 @@ export function Work() {
       <div aria-hidden="true" className="rule mx-auto mb-20 max-w-6xl" />
       <Container>
         <SectionHead
+          index="04"
           eyebrow="Live demos"
           title="Three sites you can actually click through."
           lede="These aren't screenshots or concepts on a slide. They're complete, working builds — press the buttons, filter the menu, get a quote. Each one was built to demonstrate a different kind of business."

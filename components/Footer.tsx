@@ -5,11 +5,12 @@ import { Container } from "./ui";
 import { Wordmark } from "./Wordmark";
 
 const NAV = [
-  { label: "Work", href: "/#work" },
-  { label: "Services", href: "/#services" },
-  { label: "Process", href: "/#process" },
+  { label: "What we handle", href: "/#hard-stuff" },
+  { label: "Live demos", href: "/#work" },
+  { label: "How it works", href: "/#process" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Get a mockup", href: "/#contact" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Build your brief", href: "/#brief" },
 ];
 
 export function Footer() {

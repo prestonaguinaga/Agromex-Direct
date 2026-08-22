@@ -96,6 +96,7 @@ export function Services() {
     <section id="services" className="relative scroll-mt-24 py-20 sm:py-28">
       <Container>
         <SectionHead
+          index="03"
           eyebrow="What you get"
           title="Everything a first website needs, and nothing it doesn't."
           lede="One build, one price, one point of contact. Here's what's inside every project."

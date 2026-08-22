@@ -68,6 +68,36 @@ deliberate: it shows range.
 
 ---
 
+## Pricing — and where the numbers came from
+
+Set against published 2026 market data rather than guessed:
+
+| Option | Market range | Source |
+| --- | --- | --- |
+| Freelance project build | $1,500 – $8,000 | [Levitate](https://www.levitate.ai/blog-posts/average-website-design-cost-for-small-businesses-in-2026), [Leadpages](https://leadpages.com/blog/average-cost-of-website-design-for-small-business) |
+| Boutique agency build | $6,000 – $35,000 | [Levitate](https://www.levitate.ai/blog-posts/average-website-design-cost-for-small-businesses-in-2026) |
+| Typical professional small-business site | $2,000 – $8,000 | [jim.com](https://www.jim.com/blog/small-business-website-cost) |
+| Subscription / "website as a service" | $100 – $400 per month | [Leadpages](https://leadpages.com/blog/average-cost-of-website-design-for-small-business), [SuperDupr](https://superdupr.com/blog/subscription-web-design-services) |
+| Full-service care plans | $95 – $195 per month | [Website Maintenance Services](https://websitemaintenanceservices.org/how-much-does-website-maintenance-cost/), [UENI](https://ueni.com/blog/website-maintenance-cost/) |
+| DIY builders | $15 – $50 per month | [Gruffygoat](https://gruffygoat.com/blog/small-business-website-cost) |
+
+The tiers sit at the **lower end of the freelance band** — competitive without
+reading as bargain-bin, which is its own warning sign to a business owner.
+
+| Tier | Pay once | Pay monthly | Care after |
+| --- | --- | --- | --- |
+| Storefront | $1,450 | $219 × 12 | $89/mo |
+| Full Build | $2,950 | $349 × 12 | $89/mo |
+| Growth | $5,900 | $639 × 12 | $129/mo |
+
+The monthly figure is the build spread across twelve months with hosting and
+care folded in, so it costs roughly one extra month's payment across year one.
+That trade-off is stated plainly on the page rather than buried — a business
+owner who spots it themselves stops trusting everything else on the page.
+
+All of it lives in `lib/pricing.ts`, including the eight add-ons and the care
+plan. **Change these to what you actually charge.**
+
 ## The contact form
 
 The site is a **static export** — there's no server of ours behind it — so the

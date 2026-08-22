@@ -24,6 +24,19 @@ const PRESENCE = [
 
 type Errors = Record<string, string>;
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** Same rules the form is written to; runs before anything leaves the page. */
+function validate(data: Record<string, string>): Errors {
+  const errors: Errors = {};
+  if ((data.name ?? "").trim().length < 2) errors.name = "Please tell us your name.";
+  if (!EMAIL_RE.test((data.email ?? "").trim())) errors.email = "That email doesn't look right.";
+  const message = (data.message ?? "").trim();
+  if (message.length < 10) errors.message = "A sentence or two is plenty — just not blank.";
+  else if (message.length > 4000) errors.message = "That's longer than we can accept. Trim it a little?";
+  return errors;
+}
+
 export function Contact() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errors, setErrors] = useState<Errors>({});
@@ -32,23 +45,70 @@ export function Contact() {
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("sending");
     setErrors({});
     setFormError(null);
 
-    const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const raw = Object.fromEntries(
+      new FormData(event.currentTarget).entries()
+    ) as Record<string, string>;
+
+    // Honeypot — a real visitor never sees this field, so anything in it is a bot.
+    // Accept silently rather than tell the script what tripped it.
+    if (raw.website) {
+      setStatus("sent");
+      return;
+    }
+
+    const found = validate(raw);
+    if (Object.keys(found).length > 0) {
+      setErrors(found);
+      setFormError("Something didn't go through. Have another look below.");
+      setStatus("error");
+      return;
+    }
+
+    const lead = {
+      name: raw.name.trim(),
+      business: (raw.business ?? "").trim(),
+      email: raw.email.trim(),
+      phone: (raw.phone ?? "").trim(),
+      trade: raw.trade ?? "",
+      presence: PRESENCE.find((p) => p.value === presence)?.label ?? presence,
+      message: raw.message.trim(),
+    };
+
+    // No endpoint configured yet: hand the enquiry to the visitor's email app
+    // with everything already filled in, so no lead is ever dropped on the floor.
+    if (!site.formEndpoint) {
+      const body = [
+        `Name:      ${lead.name}`,
+        `Business:  ${lead.business || "—"}`,
+        `Email:     ${lead.email}`,
+        `Phone:     ${lead.phone || "—"}`,
+        `Trade:     ${lead.trade || "—"}`,
+        `Presence:  ${lead.presence}`,
+        ``,
+        lead.message,
+      ].join("\n");
+
+      window.location.href = `mailto:${site.contact.email}?subject=${encodeURIComponent(
+        `New enquiry — ${lead.business || lead.name}`
+      )}&body=${encodeURIComponent(body)}`;
+      setStatus("sent");
+      return;
+    }
+
+    setStatus("sending");
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch(site.formEndpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, presence }),
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ ...lead, _subject: `New enquiry — ${lead.business || lead.name}` }),
       });
-      const json = await res.json();
 
-      if (!res.ok || !json.ok) {
-        setErrors(json.errors ?? {});
-        setFormError(json.error ?? "Something didn't go through. Have another look below.");
+      if (!res.ok) {
+        setFormError(`We couldn't send that. Email us directly at ${site.contact.email}.`);
         setStatus("error");
         return;
       }

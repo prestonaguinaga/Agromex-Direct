@@ -18,6 +18,7 @@ type SiteConfig = {
   social: { label: string; href: string }[];
   promises: { value: string; unit: string; label: string; prefix?: string }[];
   startingPrice: string;
+  formEndpoint: string;
 };
 
 export const site: SiteConfig = {
@@ -58,6 +59,21 @@ export const site: SiteConfig = {
 
   /** Starting price shown in the hero + pricing section. */
   startingPrice: "$1,200",
+
+  /**
+   * Where the contact form posts. The site is a static export, so there is no
+   * server of ours to receive it — a free form service does the job.
+   *
+   * Sign up at formspree.io (free tier: 50 submissions/month), create a form,
+   * and paste its endpoint here. Basin and Web3Forms work identically.
+   *
+   *   formEndpoint: "https://formspree.io/f/xxxxxxxx",
+   *
+   * Left empty, the form still works: it opens the visitor's email app with
+   * every field already filled in and addressed to you. Nothing is lost — but
+   * setting the endpoint is a smoother experience, so do it before launch.
+   */
+  formEndpoint: "",
 };
 
 export type Site = SiteConfig;

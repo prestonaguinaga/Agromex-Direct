@@ -11,6 +11,7 @@ import {
   OPTION_LIBRARY,
   homeDepotSearchUrl,
 } from "@/lib/research";
+import { FRAMING_GUIDE } from "@/lib/research-framing";
 
 export const metadata: Metadata = {
   title: "Cost guide",
@@ -79,6 +80,7 @@ export default function GuidePage() {
               ["#new-build", "New build"],
               ["#remodels", "Remodels"],
               ["#formulas", "Takeoff formulas"],
+              ["#framing", "Framing math"],
               ["#options", "Material tiers"],
             ].map(([href, label]) => (
               <a key={href} href={href} className="btn btn-xs btn-ghost">
@@ -250,9 +252,53 @@ export default function GuidePage() {
           </details>
         </section>
 
+        {/* ── Framing math ────────────────────────────────────────── */}
+        <section id="framing" className="mt-12 scroll-mt-16">
+          <h2 className="font-display text-lg">04 — Framing math</h2>
+          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-mute">
+            How pros count sticks: stud math, corners and openings, posts,
+            headers, joists and the shorthand rules of thumb — each with the
+            formula and a worked example. Bob (the site assistant) knows all
+            of this. Simplified prescriptive figures for estimating — not a
+            substitute for engineering on structural work.
+          </p>
+          <div className="mt-4 grid gap-2">
+            {FRAMING_GUIDE.map((group) => (
+              <details key={group.name} className="panel group bg-paper">
+                <summary className="flex cursor-pointer items-center gap-3 px-4 py-3 select-none">
+                  <span className="flex-1 text-sm font-semibold">{group.name}</span>
+                  <span className="microlabel tnum">{group.rules.length} rules</span>
+                  <span className="font-mono text-xs text-mute group-open:rotate-90">
+                    ▸
+                  </span>
+                </summary>
+                <div className="border-t px-4 py-3">
+                  <p className="mb-3 text-xs text-mute">{group.blurb}</p>
+                  <div className="grid gap-3">
+                    {group.rules.map((r) => (
+                      <div key={r.topic} className="border-b border-dashed pb-3 last:border-b-0 last:pb-0">
+                        <p className="text-xs font-semibold">{r.topic}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-mute">{r.rule}</p>
+                        {r.formula && (
+                          <p className="mt-1 overflow-x-auto font-mono text-[0.6875rem]">
+                            {r.formula}
+                          </p>
+                        )}
+                        <p className="microlabel !normal-case !tracking-normal mt-1">
+                          e.g. {r.example}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
         {/* ── Option tiers ────────────────────────────────────────── */}
         <section id="options" className="mt-12 scroll-mt-16">
-          <h2 className="font-display text-lg">04 — Material tiers</h2>
+          <h2 className="font-display text-lg">05 — Material tiers</h2>
           <p className="mt-2 max-w-2xl text-xs leading-relaxed text-mute">
             The &quot;wood floor vs marble&quot; tables — every big material
             choice with its budget → luxury spread. Insert any of these as

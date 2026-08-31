@@ -19,16 +19,22 @@ export function PrintSheet({
     year: "numeric",
   });
 
+  // The printed quote carries only real money: unpriced and $0 lines stay
+  // on the working sheet (they're the checklist) but are left off the PDF.
+  const printable = (item: Project["sections"][number]["items"][number]) =>
+    (lineTotal(item) ?? 0) > 0;
+
   const linkRows: { item: string; label: string; url: string }[] = [];
   for (const sec of project.sections)
     for (const item of sec.items)
-      for (const opt of item.options)
-        if (opt.url)
-          linkRows.push({
-            item: item.name,
-            label: opt.label || "product page",
-            url: opt.url,
-          });
+      if (printable(item))
+        for (const opt of item.options)
+          if (opt.url)
+            linkRows.push({
+              item: item.name,
+              label: opt.label || "product page",
+              url: opt.url,
+            });
 
   return (
     <div className="print-only">
@@ -91,8 +97,9 @@ export function PrintSheet({
 
       {/* Itemized sections */}
       {project.sections.map((sec, sIdx) => {
-        if (sec.items.length === 0) return null;
-        const secTotal = sec.items.reduce((a, i) => a + (lineTotal(i) ?? 0), 0);
+        const items = sec.items.filter(printable);
+        if (items.length === 0) return null;
+        const secTotal = items.reduce((a, i) => a + (lineTotal(i) ?? 0), 0);
         return (
           <table
             key={sec.id}
@@ -114,7 +121,7 @@ export function PrintSheet({
               </tr>
             </thead>
             <tbody>
-              {sec.items.map((item) => {
+              {items.map((item) => {
                 const active =
                   item.options.find((o) => o.id === item.activeOptionId) ??
                   item.options[0];
@@ -211,8 +218,9 @@ export function PrintSheet({
 
       {totals.unpricedItems > 0 && (
         <p className="mt-2 text-right text-[0.625rem] text-mute">
-          * {totals.unpricedItems} item{totals.unpricedItems > 1 ? "s" : ""} on the
-          sheet not yet priced; total reflects priced lines only.
+          * {totals.unpricedItems} unpriced line{totals.unpricedItems > 1 ? "s" : ""} on
+          the working sheet {totals.unpricedItems > 1 ? "are" : "is"} left off this
+          printout; the total reflects priced lines only.
         </p>
       )}
 

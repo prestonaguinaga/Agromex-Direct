@@ -34,6 +34,16 @@ browser, no accounts, no server.
 - **Print / PDF & email** — a clean drafting-style quote sheet with a title
   block, itemized sections, totals and a product-link appendix; the email
   button opens your mail app with the sheet pre-written.
+- **Bob, the site assistant** — a chat panel on every project that answers
+  estimating questions and works the sheet for you: open with the job
+  ("removing a shower, new vanity, two coats of paint") and Bob builds the
+  matching line items, trims what doesn't belong, and suggests what's
+  commonly forgotten. Say "roofing is 25k total" or "vapor roll is $10 a
+  square foot" and the numbers land in the right lines; ask "how many 2x4s
+  for a 20×20 garage?" and he shows the math. Bring your own AI key
+  (Claude recommended; OpenAI supported) — it stays in your browser and
+  calls go device→provider directly, so it works on free static hosting.
+  Per-project chat memory survives reloads.
 - **Cost guide** (`/guide`) — the research behind the tool: new-build phase
   budget shares (NAHB 2024), seven remodel checklists with ranges, all
   takeoff formulas with assumptions, and material tier tables. Compiled by
@@ -68,7 +78,9 @@ No database, no backend, no tracking.
 | `app/guide/page.tsx` | Researched cost-guide reference |
 | `components/SheetTable.tsx` | Itemized sections, paste-to-add, option tiers |
 | `components/EstimatorPanel.tsx` | House takeoff, ballpark, wall calc |
-| `components/PrintSheet.tsx` | Print/PDF layout |
+| `components/PrintSheet.tsx` | Print/PDF layout (unpriced lines excluded) |
+| `components/BobChat.tsx` | Bob — AI site assistant chat panel |
+| `lib/bob/` | Bob's tools, provider adapters (Claude/OpenAI), knowledge |
 | `lib/estimator.ts` | Takeoff formulas + unit-price ranges |
 | `lib/templates.ts` | Premade checklists |
 | `lib/research.ts`, `lib/research-full.ts` | Generated research datasets |

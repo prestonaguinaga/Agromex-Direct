@@ -9,6 +9,7 @@ import { TotalsPanel } from "@/components/TotalsPanel";
 import { EstimatorPanel } from "@/components/EstimatorPanel";
 import { InfoPanel } from "@/components/InfoPanel";
 import { PrintSheet } from "@/components/PrintSheet";
+import { BobChat } from "@/components/BobChat";
 import { useProject } from "@/lib/store";
 import { computeTotals, money } from "@/lib/format";
 import { mailtoHref } from "@/lib/sheetText";
@@ -141,6 +142,7 @@ function ProjectEditor() {
         </main>
       </div>
 
+      <BobChat project={project} update={update} />
       <PrintSheet project={project} totals={totals} />
     </div>
   );

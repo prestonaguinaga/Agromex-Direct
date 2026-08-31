@@ -61,7 +61,7 @@ export function InfoPanel({
     <div className="grid gap-4 lg:grid-cols-2">
       {/* ── Job info ─────────────────────────────────────────────── */}
       <section className="panel bg-paper">
-        <div className="border-b bg-ink px-4 py-2.5 text-paper">
+        <div className="bar border-b px-4 py-2.5">
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
             Job information
           </span>
@@ -157,11 +157,11 @@ export function InfoPanel({
 
       {/* ── Plans & files ────────────────────────────────────────── */}
       <section className="panel bg-paper">
-        <div className="flex items-center justify-between border-b bg-ink px-4 py-2.5 text-paper">
+        <div className="bar flex items-center justify-between border-b px-4 py-2.5">
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
             Plans & photos
           </span>
-          <span className="microlabel !text-paper/50 tnum">
+          <span className="microlabel tnum">
             {Math.round(usedBytes / 1024)}KB / {Math.round(MAX_TOTAL_BYTES / 1024)}KB
           </span>
         </div>

@@ -2,16 +2,18 @@
 
 /* ───────────────────────────────────────────────────────────────────────────
    AGROMEX QUOTE SHEET — design tokens
-   Drafting-paper monochrome: warm white ground, ink black, hairline rules.
+   Night drafting board: black ground, white ink, white hairline grid — easy
+   on the eyes for long sessions. "ink" = text/foreground, "paper" = ground.
+   Print flips back to black-on-white (see PRINT block).
    Hierarchy is carried by weight, inversion and spacing — never by color.
    ─────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-paper: #fbfbf9;
-  --color-paper-2: #f4f4f0;
-  --color-ink: #101010;
-  --color-line: #10101022;
-  --color-line-soft: #10101012;
-  --color-mute: #71716b;
+  --color-paper: #0b0b0a;
+  --color-paper-2: #151513;
+  --color-ink: #f2f2ee;
+  --color-line: #f2f2ee26;
+  --color-line-soft: #f2f2ee12;
+  --color-mute: #8f8f88;
 
   --font-display: var(--font-michroma), ui-sans-serif, sans-serif;
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
@@ -22,7 +24,7 @@
 
 /* ─────────────────────────────── BASE ─────────────────────────────── */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * {
@@ -61,11 +63,11 @@ body {
   background: var(--color-paper);
 }
 ::-webkit-scrollbar-thumb {
-  background: #10101033;
+  background: #f2f2ee2e;
   border: 3px solid var(--color-paper);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ink);
+  background: #f2f2ee80;
 }
 
 /* Graph-paper ground: fine minor grid + heavier major line every 5 cells. */
@@ -130,6 +132,13 @@ body {
   right: -4px;
 }
 
+/* Header strip for panels/nav: raised near-black, white type, hairline. */
+.bar {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -189,10 +198,10 @@ body {
   transition: border-color 0.15s;
 }
 .field::placeholder {
-  color: #10101040;
+  color: #f2f2ee3a;
 }
 .field:hover {
-  border-color: #10101055;
+  border-color: #f2f2ee55;
 }
 .field:focus {
   outline: none;
@@ -214,7 +223,7 @@ body {
 
 select.field {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M0 0h8L4 6z' fill='%23101010'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M0 0h8L4 6z' fill='%23f2f2ee'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.6rem center;
   padding-right: 1.6rem;
@@ -304,8 +313,17 @@ select.field {
 }
 
 @media print {
+  :root {
+    --color-paper: #ffffff;
+    --color-paper-2: #f2f2ef;
+    --color-ink: #101010;
+    --color-line: #10101033;
+    --color-line-soft: #10101014;
+    --color-mute: #5f5f5a;
+  }
   body {
     background: #fff;
+    color: #101010;
   }
   .sheet-grid {
     background-image: none;

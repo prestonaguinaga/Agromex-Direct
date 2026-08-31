@@ -46,26 +46,26 @@ export function TopBar({ active }: { active: "projects" | "guide" | "none" }) {
       href={href}
       className={`px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] transition-colors ${
         isActive
-          ? "bg-paper text-ink"
-          : "text-paper/60 hover:bg-paper/10 hover:text-paper"
+          ? "bg-ink text-paper"
+          : "text-mute hover:bg-ink/10 hover:text-ink"
       }`}
     >
       {label}
     </Link>
   );
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-ink bg-ink text-paper">
+    <header className="bar no-print sticky top-0 z-40 border-b">
       <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-3">
           <Wordmark small />
-          <span className="microlabel !text-paper/50 hidden md:inline">
+          <span className="microlabel hidden md:inline">
             Construction quote sheet
           </span>
         </Link>
         <nav className="flex items-center gap-1">
           {tab("/", "Projects", active === "projects")}
           {tab("/guide/", "Cost guide", active === "guide")}
-          <span className="ml-3 hidden border-l border-paper/20 pl-3 sm:block">
+          <span className="ml-3 hidden border-l pl-3 sm:block">
             <Clock />
           </span>
         </nav>
@@ -97,21 +97,21 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/40 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/70 p-4 backdrop-blur-[2px]"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className={`panel rise-in w-full bg-paper shadow-[8px_8px_0_0_rgba(16,16,16,0.9)] ${
+        className={`panel rise-in w-full bg-paper shadow-[8px_8px_0_0_rgba(242,242,238,0.14)] ${
           wide ? "max-w-3xl" : "max-w-lg"
         }`}
       >
-        <div className="flex items-center justify-between border-b bg-ink px-4 py-2.5 text-paper">
+        <div className="bar flex items-center justify-between border-b px-4 py-2.5">
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
             {title}
           </span>
           <button
             onClick={onClose}
-            className="font-mono text-sm leading-none text-paper/70 hover:text-paper"
+            className="font-mono text-sm leading-none text-mute hover:text-ink"
             aria-label="Close"
           >
             ✕

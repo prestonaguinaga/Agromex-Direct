@@ -171,28 +171,28 @@ function SectionBlock({
   return (
     <section className="panel bg-paper">
       {/* Section header */}
-      <div className="flex items-center gap-2 border-b bg-ink px-3 py-2 text-paper">
+      <div className="bar flex items-center gap-2 border-b px-3 py-2">
         <button
-          className="font-mono text-xs text-paper/60 hover:text-paper"
+          className="font-mono text-xs text-mute hover:text-ink"
           onClick={() => onPatchSection((s) => ({ ...s, collapsed: !collapsed }))}
           title={collapsed ? "Expand" : "Collapse"}
         >
           {collapsed ? "▸" : "▾"}
         </button>
-        <span className="microlabel !text-paper/50 tnum">
+        <span className="microlabel tnum">
           S{String(index + 1).padStart(2, "0")}
         </span>
         <HeaderName
           value={section.name}
           onCommit={(v) => onPatchSection((s) => ({ ...s, name: v }))}
         />
-        <span className="microlabel !text-paper/50 tnum hidden sm:inline">
+        <span className="microlabel tnum hidden sm:inline">
           {section.items.length} items
         </span>
         <span className="tnum ml-auto font-mono text-sm">{money(secTotal)}</span>
-        <div className="ml-2 flex items-center gap-1 border-l border-paper/20 pl-2">
+        <div className="ml-2 flex items-center gap-1 border-l pl-2">
           <button
-            className="px-1 font-mono text-[0.625rem] text-paper/50 hover:text-paper disabled:opacity-20"
+            className="px-1 font-mono text-[0.625rem] text-mute hover:text-ink disabled:opacity-20"
             disabled={isFirst}
             onClick={() => onMoveSection(-1)}
             title="Move section up"
@@ -200,7 +200,7 @@ function SectionBlock({
             ▲
           </button>
           <button
-            className="px-1 font-mono text-[0.625rem] text-paper/50 hover:text-paper disabled:opacity-20"
+            className="px-1 font-mono text-[0.625rem] text-mute hover:text-ink disabled:opacity-20"
             disabled={isLast}
             onClick={() => onMoveSection(1)}
             title="Move section down"
@@ -208,7 +208,7 @@ function SectionBlock({
             ▼
           </button>
           <button
-            className="px-1 font-mono text-xs text-paper/50 hover:text-paper"
+            className="px-1 font-mono text-xs text-mute hover:text-ink"
             onClick={() => {
               if (
                 section.items.length === 0 ||
@@ -322,7 +322,7 @@ function HeaderName({
   const [text, setText] = useState<string | null>(null);
   return (
     <input
-      className="min-w-0 flex-shrink bg-transparent font-display text-xs uppercase tracking-[0.08em] text-paper outline-none placeholder:text-paper/40"
+      className="min-w-0 flex-shrink bg-transparent font-display text-xs uppercase tracking-[0.08em] text-ink outline-none placeholder:text-mute"
       style={{ width: `${Math.max((text ?? value).length + 2, 10)}ch` }}
       value={text ?? value}
       onChange={(e) => setText(e.target.value)}

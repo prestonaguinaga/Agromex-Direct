@@ -202,13 +202,13 @@ export default function GuidePage() {
           <div className="panel mt-4 overflow-x-auto bg-paper">
             <table className="w-full min-w-[720px] text-xs">
               <thead>
-                <tr className="border-b bg-ink text-left text-paper">
-                  <th className="microlabel !text-paper/60 px-3 py-2">Material</th>
-                  <th className="microlabel !text-paper/60 px-3 py-2">Formula</th>
-                  <th className="microlabel !text-paper/60 px-3 py-2 text-right">
+                <tr className="bar border-b text-left">
+                  <th className="microlabel px-3 py-2">Material</th>
+                  <th className="microlabel px-3 py-2">Formula</th>
+                  <th className="microlabel px-3 py-2 text-right">
                     Waste
                   </th>
-                  <th className="microlabel !text-paper/60 px-3 py-2 text-right">
+                  <th className="microlabel px-3 py-2 text-right">
                     Unit price
                   </th>
                 </tr>

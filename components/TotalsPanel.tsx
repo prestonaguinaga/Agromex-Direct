@@ -41,7 +41,7 @@ export function TotalsPanel({
 
   return (
     <aside className="panel bg-paper">
-      <div className="border-b bg-ink px-4 py-2.5 text-paper">
+      <div className="bar border-b px-4 py-2.5">
         <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
           Totals
         </span>

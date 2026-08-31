@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { Project } from "@/lib/types";
 import {
   DEFAULT_INPUTS,
@@ -89,7 +90,7 @@ export function EstimatorPanel({
       {/* ── Inputs column ─────────────────────────────────────────── */}
       <div className="grid content-start gap-4">
         <section className="panel bg-paper">
-          <div className="border-b bg-ink px-4 py-2.5 text-paper">
+          <div className="bar border-b px-4 py-2.5">
             <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
               House dimensions
             </span>
@@ -187,7 +188,7 @@ export function EstimatorPanel({
 
         {/* Ballpark card */}
         <section className="panel bg-paper">
-          <div className="border-b bg-ink px-4 py-2.5 text-paper">
+          <div className="bar border-b px-4 py-2.5">
             <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
               Ballpark check
             </span>
@@ -238,7 +239,7 @@ export function EstimatorPanel({
               </>
             )}
             <p className="microlabel mt-3">
-              Full source data in the <a className="underline" href="/guide/">cost guide</a>
+              Full source data in the <Link className="underline" href="/guide/">cost guide</Link>
             </p>
           </div>
         </section>
@@ -248,7 +249,7 @@ export function EstimatorPanel({
 
       {/* ── Takeoff results ───────────────────────────────────────── */}
       <section className="panel bg-paper">
-        <div className="flex items-center justify-between gap-3 border-b bg-ink px-4 py-2.5 text-paper">
+        <div className="bar flex items-center justify-between gap-3 border-b px-4 py-2.5">
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
             Materials takeoff — whole house
           </span>
@@ -343,7 +344,7 @@ function WallCalc({ update }: { update: Update }) {
 
   return (
     <section className="panel bg-paper">
-      <div className="border-b bg-ink px-4 py-2.5 text-paper">
+      <div className="bar border-b px-4 py-2.5">
         <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
           Quick wall calc
         </span>

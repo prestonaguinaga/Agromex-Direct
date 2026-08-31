@@ -1,72 +1,48 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Familjen_Grotesk, JetBrains_Mono } from "next/font/google";
-import { site } from "@/site.config";
+import { Michroma, Archivo, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 
-const instrument = Instrument_Serif({
+const michroma = Michroma({
   subsets: ["latin"],
   weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument",
+  variable: "--font-michroma",
   display: "swap",
 });
 
-const familjen = Familjen_Grotesk({
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-familjen",
+  variable: "--font-archivo",
   display: "swap",
 });
 
-const jetbrains = JetBrains_Mono({
+const splineMono = Spline_Sans_Mono({
   subsets: ["latin"],
-  variable: "--font-jetbrains",
+  variable: "--font-splinemono",
   display: "swap",
 });
-
-const fullName = [site.name, site.nameSuffix].filter(Boolean).join(" ");
 
 export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
   title: {
-    default: `${fullName} — ${site.tagline}`,
-    template: `%s — ${fullName}`,
+    default: "AGROMEX — Construction Quote Sheet",
+    template: "%s — AGROMEX",
   },
-  description: `${fullName} designs and builds fast, modern websites for small businesses that don't have one yet. Free mockup before you pay anything. Launch from ${site.startingPrice}.`,
-  keywords: [
-    "web design for small business",
-    "website for local business",
-    "small business website design",
-    "restaurant website design",
-    "contractor website design",
-    "affordable website design",
-  ],
-  openGraph: {
-    type: "website",
-    url: site.url,
-    siteName: fullName,
-    title: `${fullName} — ${site.tagline}`,
-    description: `Fast, modern websites for businesses that don't have one yet. See a free mockup of your site before you pay anything.`,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${fullName} — ${site.tagline}`,
-    description: `Fast, modern websites for businesses that don't have one yet.`,
-  },
-  robots: { index: true, follow: true },
+  description:
+    "Quote construction projects fast: itemized material sheets with product links, price options, takeoff estimators and printable quotes. Everything saves in your browser.",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#05070d",
-  colorScheme: "dark",
+  themeColor: "#fbfbf9",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${instrument.variable} ${familjen.variable} ${jetbrains.variable}`}
+      className={`${michroma.variable} ${archivo.variable} ${splineMono.variable}`}
     >
-      <body className="grain antialiased">{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

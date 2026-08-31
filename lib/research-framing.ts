@@ -43,7 +43,7 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
     "rule": "Add studs per corner ON TOP of the field count, by corner type: conventional 3-stud corner (also the 'California' / U-shaped corner) = +3 studs; old-style 4-stud blocked corner = +4; advanced-framing 2-stud corner with drywall clips = +2. Default to +3 per corner in quotes unless the job specifies advanced framing. Interior partition T-intersections add +2 to +3 studs each (ladder blocking or partition post) — count them the same way if partitions are in scope.",
     "formula": "cornerStuds = numCorners * 3 (default); rectangle = 4 corners = +12",
     "example": "20x20 rectangle, 3-stud corners: 4 x 3 = 12 extra studs.",
-    "notes": "Sources: https://www.justneedspaint.com/california-corners-framing-corners-for-remodels-and-new-builds/ , https://bsesc.energy.gov/energy-basics/advanced-framing-insulated-corners , https://calcsummit.com/calculators/construction/framing/"
+    "notes": "Sources: https://www.justneedspaint.com/california-corners-framing-corners-for-remodels-and-new-builds/ , https://bsesc.energy.gov/energy-basics/advanced-framing-insulated-corners , https://calcsummit.com/calculators/construction/framing/ Stacking note: the per-wall field count already places 2 stud"
   },
   {
     "topic": "King + jack studs per opening",
@@ -138,8 +138,8 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
   },
   {
     "topic": "Worked example 20x20 — stud count buildup",
-    "rule": "One-story 20x20 ft, 8-ft walls, 16\" OC, 2 doors (3'0\") + 4 windows (3'0\" x 4'0\"), 3-stud corners, roof+ceiling load only. Field: 4 walls x [ceil(240/16)+1] = 4 x 16 = 64. Corners: 4 x 3 = 12. Doors: 2 x (2 kings + 2 jacks) = 8. Windows: 4 x (2 kings + 2 jacks) = 16. Window sill stock: 4 x 1 = 4. Cripples: cut from the un-deducted field studs (3 per window below the sill; none above headers in an 8-ft wall) = +0. Net = 64+12+8+16+4 = 104 studs; +6% waste → order 110 precut studs.",
-    "formula": "total = 64 field + 12 corner + 8 door + 16 window + 4 sill = 104; order = ceil(104*1.06) = 110",
+    "rule": "One-story 20x20 ft, 8-ft walls, 16\" OC, 2 doors (3'0\") + 4 windows (3'0\" x 4'0\"), 3-stud corners, roof+ceiling load only. Field: 4 walls x [ceil(240/16)+1] = 4 x 16 = 64. Corners: 4 x 3 = 12. Doors: 2 x (2 kings + 2 jacks) = 8. Windows: 4 x (2 kings + 2 jacks) = 16. Window sill stock: 4 x 1 = 4. Cripples: cut from the un-deducted field studs (3 per window below the sill; none above headers in an 8-ft wall) = +0. Net = 64+12+8+16+4 = 104 studs; +5% waste → order 110 precut studs.",
+    "formula": "total = 64 field + 12 corner + 8 door + 16 window + 4 sill = 104; order = ceil(104*1.05) = 110",
     "example": "20x20, 8ft, 16\" OC, 2 doors + 4 windows → 110 pcs 2x4 x 92-5/8\" precut studs (1.375 studs/lf — opening-heavy, correctly above the 1/lf rule).",
     "notes": "Each component formula grounded in the rules above; cross-check via https://www.omnicalculator.com/construction/framing and https://www.hunker.com/12611815/how-to-calculate-a-materials-list-for-garage-framing/"
   },
@@ -186,23 +186,23 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
   },
   {
     "topic": "Built-up beam allowable spans (2-ply / 3-ply 2x)",
-    "rule": "Simplified from IRC Table R507.5 (deck/porch beams, 40 psf live + 10 psf dead), SPF/Hem-Fir #2 class, joist span up to 10 ft: 2-ply 2x8 spans 6 ft post-to-post, 2-ply 2x10 spans 8 ft, 2-ply 2x12 spans 10 ft. A 3-ply beam of the same depth spans about 1.22x the 2-ply value (3-2x10 ~ 10 ft, 3-2x12 ~ 12 ft). Southern Pine #2 allows roughly 1 ft more per size (code table: 2-2x8 = 7'-11\", 2-2x10 = 10'-3\", 2-2x12 = 12'-0\" at 8-ft joist span). If supported joist span exceeds 10 ft, drop one beam size or reduce post spacing ~1 ft per 2 ft of extra joist span.",
-    "formula": "maxBeamSpanFt(2-ply, SPF class, joists<=10ft) = nominalDepthIn - 2 (2x8->6, 2x10->8, 2x12->10); maxBeamSpanFt(3-ply) = 1.22 * maxBeamSpanFt(2-ply); beamPieceCount = plies * ceil(beamLengthFt / stockLengthFt)",
-    "example": "20x20 ft structure, front porch beam carrying 10-ft joist span: choose 2-ply 2x10 -> max span 8 ft -> 4 posts. Material: 2 plies x 20 ft = 4 pcs 2x10x10 ft (stagger ply joints over posts), plus 1/2-in plywood spacers or lag/nail schedule per code.",
-    "notes": "Source: IRC Table R507.5 (up.codes/s/deck-beams; deckmath.com; permitdeck.com/deck-permits/codes/beam-span). Ply joints must land over posts. The 'depth-in-inches minus 2' rule is deliberately conservative for quoting."
+    "rule": "Planning rule for built-up 2x beams (SPF-class, deck/porch loads): allowable beam span in feet ≈ ply-depth-minus-2 for 2-ply (2-2x8 ≈ 6 ft, 2-2x10 ≈ 8 ft, 2-2x12 ≈ 10 ft), +1 ft for 3-ply. These figures are valid for joist spans up to 8 ft onto the beam; for longer joist spans reduce beam span (post spacing) by about 1 ft per 2 ft of extra joist span, or size from IRC Table R507.5(1). Ply butt joints must land on post centerlines — never mid-span — so order ply lengths in multiples of the post spacing.",
+    "formula": "beamSpanFt ≈ (nominalDepth - 2) [2-ply, joistSpan<=8ft] ; plyLengths = multiples of postSpacingFt so joints land over posts",
+    "example": "20-ft beam on posts at 6'-8\": 2-ply 2x10 OK for 8-ft joists. Order plies as 13'-4\" + 6'-8\" pieces (cut from 14-ft and 8-ft stock) so both ply joints land on posts — not 2 butted 10-footers, whose joint would fall mid-span.",
+    "notes": "IRC Table R507.5(1) at 40 psf gives SPF 2-ply 2x10 ≈ 7'-9\" when carrying 10-ft joists — hence the 8-ft joist-span cap on the simplified figures."
   },
   {
     "topic": "Header sizing over openings (single story, bearing wall)",
-    "rule": "Simplified single-story header table (roof + ceiling load, building width up to ~28 ft, #2 lumber, from IRC Table R602.7(1)): 2-2x4 for openings up to 3 ft; 2-2x6 up to 5 ft; 2-2x8 up to 6.5 ft; 2-2x10 up to 8 ft; 2-2x12 up to 10 ft. (Exact 2021 IRC values at 24-ft building width, 30 psf ground snow: 2-2x6 = 5'-5\", 2-2x8 = 6'-10\", 2-2x10 = 8'-5\", 2-2x12 = 9'-9\".) If the header also carries a floor above, drop the allowable span roughly one size (use 2-2x10 for a 6-ft opening, etc.) or go to 3-ply. Non-bearing walls: flat 2x4 blocking is enough, no structural header.",
-    "formula": "headerSize = smallest of {2-2x4:3, 2-2x6:5, 2-2x8:6.5, 2-2x10:8, 2-2x12:10} with maxFt >= openingWidthFt; headerLengthIn = openingWidthIn + 3 (one jack each side, spans <= 6 ft) or + 6 (two jacks each side, spans > 6 ft)",
-    "example": "20x20 ft one-story house: 6-ft patio door in a bearing wall -> 2-2x8; header length = 72 + 3 + 3 = 78 in (6'-6\") -> buy 2 pcs 2x8x8 ft plus 1/2-in plywood spacer for a 2x4 wall (or use 2x6-wall solid depth). A 3-ft window -> 2-2x6, length 39 in.",
-    "notes": "Source: IRC R602.7 and Table R602.7(1) (codes.iccsafe.org IRC2018/2021 R602.7; thebuildingcodeforum.com thread on R602.7(1); ultimatefinancecalculator header calculator). Snow >=50 psf or building width >28 ft: drop one span step."
+    "rule": "Simplified single-story (roof+ceiling, ~24 ft building width, moderate snow) header sizing for quoting: 2-2x6 up to 5 ft span, 2-2x8 to 6.5 ft, 2-2x10 to 8 ft, 2-2x12 to 9.5 ft (2021 IRC Table R602.7(1) lists 2-2x12 at 9'-9\"). Anything wider — garage doors 10 ft and up — moves to triple-ply or LVL, sized from the table or by the supplier. Header length = rough opening + 3\" (one jack each side) for spans up to 6 ft, +6\" (two jacks per side) above 6 ft.",
+    "formula": "headerSize = span<=5 ? '2-2x6' : span<=6.5 ? '2-2x8' : span<=8 ? '2-2x10' : span<=9.5 ? '2-2x12' : '3-ply/LVL — size from IRC R602.7(1) or supplier'; headerLenIn = ROwidthIn + (span<=6 ? 3 : 6)",
+    "example": "6-ft patio door: 2-2x8 header, length 72 + 3 = 75 in (6'-3\") — one jack each side. 9-ft garage door: 2-2x12, length 108 + 6 = 114 in, two jacks per side. 16-ft garage door: LVL, engineered.",
+    "notes": "Values are conservative planning figures for typical loads; wider buildings, heavy snow, or a floor above shrink allowable spans — confirm against IRC Table R602.7(1)."
   },
   {
     "topic": "Opening stud package (kings/jacks per header)",
-    "rule": "Every headered opening adds studs beyond the regular layout: 1 king stud each side always, plus jack (trimmer) studs per IRC R602.7(1) NJ column - 1 jack per side for header spans up to ~6 ft, 2 jacks per side for longer spans. Also count cripples above the header and below the sill at the regular stud spacing.",
-    "formula": "extraStudsPerOpening = 2*kings + 2*jacksPerSide = 2*1 + 2*(spanFt <= 6 ? 1 : 2); cripples ~= floor(openingWidthIn / studSpacingIn) per interrupted zone (above header, and below sill for windows)",
-    "example": "6-ft patio door: 2 kings + 2 jacks = 4 extra studs; 8-ft garage-window opening: 2 kings + 4 jacks = 6 extra studs; a 3-ft window also adds ~2 head cripples + 2 sill cripples (floor(36/16)=2 per zone).",
+    "rule": "Extras ordered per opening are the kings and jacks only (plus sill stock for windows): 2 kings + 1 jack per side for spans up to ~6 ft (4 studs), 2 jacks per side above (6 studs). Cripples above the header and below the sill are NOT extra orders — the field-stud count is never reduced for openings, and those displaced field studs get cut down into the cripples. Counting cripples as adders double-counts lumber.",
+    "formula": "openingExtras = 2 + 2*(span<=6ft ? 1 : 2) studs (+1 stud sill stock per window); cripples = 0 extra (supplied by un-deducted field studs)",
+    "example": "3-ft window: 2 kings + 2 jacks + 1 sill stud = 5 extras; its 3 cripples come from the 3 field studs the opening displaced. 8-ft slider: 2 kings + 4 jacks = 6 extras.",
     "notes": "Feeds the stud takeoff: add these on top of the wall's base stud count."
   },
   {
@@ -223,7 +223,7 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
     "topic": "Girder/beam count for a floor",
     "rule": "Number of interior girder lines = (dimension the joists must cross / max joist span) rounded up, minus 1. Girders run perpendicular to the joists, full building length. Interior floor girders are built-up 3-ply as a default. Posts/columns under an interior girder: simplified allowable girder spans carrying one floor (24-ft-wide building, #2 lumber, IRC Table R602.7(2) class): 3-2x8 ~ 5.5 ft, 3-2x10 ~ 7 ft, 3-2x12 ~ 8 ft, 4-2x12 ~ 9 ft between supports.",
     "formula": "girderLines = ceil(joistCrossDimensionFt / maxJoistSpanFt) - 1; girderLengthFt = perpendicularDimensionFt; interiorPosts = ceil(girderLengthFt / girderMaxSpanFt) - 1 (ends bear on foundation)",
-    "example": "20x20 ft floor, 2x8 joists (max 12.25 ft): girderLines = ceil(20/12.25) - 1 = 1 center girder, 20 ft long. Choose 3-2x10 (7-ft spans): interiorPosts = ceil(20/7) - 1 = 2 posts (three ~6'-8\" spans). Material: 3 plies x 20 ft = 6 pcs 2x10x10 ft, joints staggered over posts, plus 2 adjustable steel columns or 6x6 posts on footings.",
+    "example": "20x20 ft floor, 2x8 joists (max 12.25 ft): girderLines = ceil(20/12.25) - 1 = 1 center girder, 20 ft long. Choose 3-2x10 (7-ft spans): interiorPosts = ceil(20/7) - 1 = 2 posts (three ~6'-8\" spans). Material: 3 plies x 20 ft = girder plies ordered in multiples of the post spacing so every butt joint lands on a post centerline (e.g. posts at 6'-8\": 13'-4\" + 6'-8\" pieces per ply), plus 2 adjustable s",
     "notes": "Source: IRC Table R602.7(2)/R602.7(3) girder tables (up.codes/s/allowable-girder-spans; jaspector.com IRC 2024 R502.5). Steel I-beam or LVL replaces built-up 2x when fewer posts are wanted."
   },
   {
@@ -235,10 +235,10 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
   },
   {
     "topic": "Ceiling joist sizing and count",
-    "rule": "Ceiling joist spans, SPF #2 @ 16 in OC (IRC Tables R802.4(1)/(2) class values): uninhabitable attic WITHOUT storage (10 psf): 2x6 = ~16'-10\", 2x8 = ~20'-0\", 2x10 = 20 ft+. Attic WITH limited storage (20 psf): 2x6 = ~13'-6\", 2x8 = ~17'-8\", 2x10 = ~21 ft. Count uses the same formula as floor joists: spaced along the ridge/long dimension. Ceiling joists double as rafter ties - run them parallel to rafters and lap them over the center bearing wall.",
+    "rule": "Ceiling joist spans, SPF #2 @ 16 in OC (IRC Tables R802.4(1)/(2) class values): uninhabitable attic WITHOUT storage (10 psf): 2x6 = ~16'-10\", 2x8 = ~20'-0\", 2x10 = 20 ft+. Attic WITH limited storage (20 psf): 2x6 = ~12'-10\", 2x8 = ~16'-3\", 2x10 = ~19'-10\". Count uses the same formula as floor joists: spaced along the ridge/long dimension. Ceiling joists double as rafter ties - run them parallel to rafters and lap them over the center bearing wall.",
     "formula": "joistLines = ceil(spacedDimensionFt * 12 / 16) + 1; size = smallest with maxSpanFt >= clearSpanFt (use storage table if attic access/storage); pieces double if lapped at a center wall",
     "example": "20x20 ft house, no attic storage: single 20-ft clear span needs 2x8 (20'-0\" max - marginal) -> spec 2x10 x 16 lines = 16 pcs; with a center bearing wall, two 10-ft spans of 2x6: ceil(240/16)+1 = 16 lines x 2 pieces = 32 pcs 2x6x12 ft.",
-    "notes": "Source: AWC ceiling joist span data and IRC R802.4 (ckcog.com ceiling joist span table PDF; awc.org span tutorial; mycarpentry.com joist span tables). If storage is possible (pull-down stairs), always use the 20-psf column."
+    "notes": "Source: AWC ceiling joist span data and IRC R802.4 (ckcog.com ceiling joist span table PDF; awc.org span tutorial; mycarpentry.com joist span tables). If storage is possible (pull-down stairs), always use the 20-psf column. Limited-storage (20 psf) figures are SPF #2 per IRC Table R802.5.1(2); South"
   },
   {
     "topic": "Rafter length from span + pitch",
@@ -283,9 +283,9 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
     rules: [
   {
     "topic": "Framing lumber per sq ft of house",
-    "rule": "Stick-framed single-family homes take roughly 3-6 board feet of framing lumber per square foot of floor area for the basic frame; use 6.3 BF/sq ft as a planning average for the full structural framing package, plus about 3 sq ft of structural panels (sheathing/subfloor) per sq ft of house. Order with 5-10% waste.",
-    "formula": "boardFeet = houseSqFt * 6.3; panelSqFt = houseSqFt * 3; orderBF = boardFeet * 1.05 to 1.10",
-    "example": "2,000 sq ft house -> 2000 * 6.3 = ~12,600 BF of lumber + ~6,000 sq ft of panels; order ~13,200-13,900 BF with waste",
+    "rule": "Framing lumber by scope: wall framing alone runs ~3–4 board feet per sq ft of floor area; the FULL structural package (floor decks + walls + roof stack) runs ~6–6.5 BF/sq ft — use 6.3 BF/sq ft as the full-package planning average, plus ~3 sq ft of panel goods (sheathing/subfloor) per sq ft of house.",
+    "formula": "wallsOnlyBF = houseSqFt * 3.5; fullPackageBF = houseSqFt * 6.3; panelSqFt = houseSqFt * 3; order = BF * 1.05–1.10",
+    "example": "2,000 sq ft house, full package: 2000 × 6.3 = ~12,600 BF + ~6,000 sq ft of panels; order ~13,200–13,900 BF with waste.",
     "notes": "Sources: lumber-takeoff.com, easytakeoffs.com, coohom.com. Spacing (16 vs 24 OC), wall height, and roof complexity swing this materially; use as a sanity check against a real takeoff, not as the bid."
   },
   {
@@ -304,9 +304,9 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
   },
   {
     "topic": "Header sizing quick rule",
-    "rule": "Framer's shorthand for a double 2x header carrying roof+ceiling: about 1 inch of nominal depth per foot of opening span (double 2x6 -> ~6 ft, double 2x8 -> ~8 ft), then verify against IRC Table R602.7(1) since building width, snow load and stories change it. Non-bearing walls: no structural header required; a flat 2x4 is permitted for openings up to 8 ft (IRC R602.7.3). Windows under 22 in wide in 24 in OC stack framing need no header.",
-    "formula": "headerDepthIn ~= openingSpanFt (double 2x, roof+ceiling load only); always verify vs IRC R602.7(1)",
-    "example": "6 ft window opening in a bearing wall under roof+ceiling -> double 2x6 candidate, confirm in R602.7(1); same opening in a non-bearing partition -> flat 2x4, no header",
+    "rule": "MNEMONIC ONLY — NOT FOR QUOTING: 'an inch of header depth per foot of span' is a memory aid that runs a full size class hot versus the code table. For actual sizing use the simplified table: 2-2x6 to 5 ft, 2-2x8 to 6.5 ft, 2-2x10 to 8 ft, 2-2x12 to 9.5 ft, 3-ply/LVL beyond.",
+    "formula": "use the simplified header table, not the mnemonic",
+    "example": "A 6-ft opening: the mnemonic suggests 2-2x6; the table (and IRC R602.7(1)) says 2-2x8. Quote the 2x8.",
     "notes": "Sources: jlconline.com Exterior Wall Headers, finehomebuilding.com, up.codes IRC 602.7.3. Flag: rule of thumb only - quote should print 'verify per IRC R602.7(1)'."
   },
   {
@@ -339,9 +339,9 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
   },
   {
     "topic": "Drywall hanging labor",
-    "rule": "Production benchmark: a hanger hangs 35-40 sheets (4x8) in an 8-hr day on open work; union standard is 40 sheets per day per 2-man crew on commercial. In sq ft: 1,200-1,500 sq ft per man-day production residential, dropping to 800-1,000 for cut-up tenant/metal-stud work, and as low as 10 sheets/day on remodel walls full of pipes.",
-    "formula": "hangDays = sheets / 35 (per hanger, production); or manDays = areaSqFt / 1200",
-    "example": "150 sheets -> 150/35 = ~4.3 hanger-days; a 2-man crew ~2 days plus stock/scrap time",
+    "rule": "Framing labor: ~400–500 sq ft per framer per day applies PER MAJOR PHASE (floor deck, wall framing, roof stack each). Whole-frame all-in productivity is ~60–100 sq ft per framer-day, which is why a full frame takes weeks, not days.",
+    "formula": "perPhaseDays = houseSqFt / (framers * 450); wholeFrameDays = houseSqFt / (framers * 80)",
+    "example": "2,000 sq ft, 4-man crew: each phase ≈ 2000/(4×450) ≈ 1.1 crew-days; whole frame ≈ 2000/(4×80) ≈ 6–12 working days plus complexity.",
     "notes": "Sources: contractortalk.com and drywalltalk.com pro forums. Quote the low end (25-30 sheets/day) for remodels and high ceilings."
   },
   {
@@ -388,9 +388,9 @@ export const FRAMING_GUIDE: { name: string; blurb: string; rules: FramingRule[] 
   },
   {
     "topic": "Stair stringer count",
-    "rule": "Stringers at 16 in OC max for wood treads: 36 in wide stairs = 3 stringers (two outside, one center). Formula: ceil(widthIn/16) + 1. Composite treads often require 12 in OC -> 4 stringers for 36 in. Wider stairs: 48 in = 4 stringers.",
-    "formula": "stringers = ceil(stairWidthIn / 16) + 1 (use /12 for composite treads)",
-    "example": "36 in wide deck stairs, wood treads -> ceil(36/16)+1 = 3 stringers; same stairs with composite treads -> 4",
+    "rule": "Stair stringers: wood treads need a stringer every ~18 in of width, minimum 3 — so 36-in stairs = 3 stringers, 48-in = 4. Composite treads flex more: one every ~12 in (36-in composite stairs = 4 stringers).",
+    "formula": "wood: stringers = max(3, ceil(stairWidthIn / 18) + 1); composite: ceil(stairWidthIn / 12) + 1",
+    "example": "36-in wood stairs: max(3, ceil(36/18)+1) = 3. 48-in: max(3, ceil(48/18)+1) = 4. 36-in composite: ceil(36/12)+1 = 4.",
     "notes": "Sources: truetips.blog 3-rule, engineerfix.com, stairs4u.com. One 2x12 yields one stringer; add one spare board for a miscut."
   },
   {

@@ -16,6 +16,32 @@ import { Label } from "./ui";
 
 type Update = (fn: (prev: Project) => Project) => void;
 
+/**
+ * Voice input rides on the browser's built-in Web Speech API (Chrome,
+ * Edge, Safari incl. iOS) — no key, no cost. The DOM lib doesn't type it,
+ * so declare the sliver we use.
+ */
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult:
+    | ((e: {
+        results: { length: number; [i: number]: { 0: { transcript: string } } };
+      }) => void)
+    | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  }
+}
+
 const CONFIG_KEY = "agromex.bob.v1";
 const chatKey = (projectId: string) => `agromex.bob.chat.${projectId}`;
 const MAX_STORED = 60;
@@ -85,6 +111,43 @@ export function BobChat({
   const projectRef = useRef(project);
   projectRef.current = project;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ── Voice input ─────────────────────────────────────────────────
+  const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const recRef = useRef<SpeechRecognitionLike | null>(null);
+
+  useEffect(() => {
+    setVoiceSupported(
+      !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+    );
+    return () => recRef.current?.stop();
+  }, []);
+
+  const toggleMic = () => {
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Ctor) return;
+    const rec = new Ctor();
+    rec.lang = "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    const base = input.trim();
+    rec.onresult = (e) => {
+      let transcript = "";
+      for (let i = 0; i < e.results.length; i++)
+        transcript += e.results[i][0].transcript;
+      setInput((base ? base + " " : "") + transcript.trim());
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    rec.start();
+    setListening(true);
+  };
 
   useEffect(() => {
     setConfig(loadConfig());
@@ -261,12 +324,23 @@ export function BobChat({
               <div className="flex gap-1.5 border-t p-2.5">
                 <input
                   className="field flex-1 text-sm"
-                  placeholder="Tell Bob the job, a price, or ask…"
+                  placeholder={listening ? "Listening — talk to Bob…" : "Tell Bob the job, a price, or ask…"}
                   value={input}
                   disabled={busy}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
                 />
+                {voiceSupported && (
+                  <button
+                    className={`btn !px-2.5 ${listening ? "btn-solid animate-pulse" : "btn-ghost"}`}
+                    disabled={busy}
+                    onClick={toggleMic}
+                    title={listening ? "Stop listening" : "Talk instead of typing"}
+                    aria-label={listening ? "Stop voice input" : "Start voice input"}
+                  >
+                    {listening ? "◉" : "🎤"}
+                  </button>
+                )}
                 <button className="btn btn-solid" disabled={busy || !input.trim()} onClick={() => send()}>
                   →
                 </button>

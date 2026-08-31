@@ -492,6 +492,7 @@ function ItemRow({
               <OptionRow
                 key={opt.id}
                 option={opt}
+                itemName={item.name}
                 isActive={opt.id === (item.activeOptionId ?? item.options[0]?.id)}
                 canDelete={item.options.length > 1}
                 itemQty={item.qty}
@@ -605,6 +606,7 @@ function TierLibraryPicker({
 
 function OptionRow({
   option,
+  itemName,
   isActive,
   canDelete,
   itemQty,
@@ -613,6 +615,7 @@ function OptionRow({
   onDelete,
 }: {
   option: ItemOption;
+  itemName: string;
   isActive: boolean;
   canDelete: boolean;
   itemQty: number;
@@ -641,7 +644,7 @@ function OptionRow({
 
   return (
     <div
-      className={`grid grid-cols-[16px_minmax(120px,1fr)_minmax(140px,1.2fr)_92px_40px_20px] items-center gap-1.5 border px-2 py-1 ${
+      className={`grid grid-cols-[16px_minmax(110px,1fr)_minmax(130px,1.2fr)_88px_58px_36px_20px] items-center gap-1.5 border px-2 py-1 ${
         isActive ? "border-ink bg-paper" : "border-line bg-transparent"
       }`}
     >
@@ -669,6 +672,15 @@ function OptionRow({
         onCommit={(v) => onPatch((o) => ({ ...o, unitPrice: v }))}
         className="field-quiet text-right text-xs"
       />
+      <a
+        className="btn btn-xs btn-ghost !px-1"
+        href={homeDepotSearchUrl(option.label.trim() || itemName)}
+        target="_blank"
+        rel="noreferrer"
+        title={`Search "${option.label.trim() || itemName}" on Home Depot — copy the product link back into the link box`}
+      >
+        HD ⌕
+      </a>
       {option.url ? (
         <a
           href={option.url}
@@ -691,7 +703,7 @@ function OptionRow({
         ✕
       </button>
       {(option.note || (isActive && option.unitPrice !== null && itemQty !== 1)) && (
-        <span className="col-span-6 -mt-0.5 flex justify-between gap-3">
+        <span className="col-span-7 -mt-0.5 flex justify-between gap-3">
           <span className="microlabel !normal-case !tracking-normal truncate">
             {option.note ?? ""}
           </span>

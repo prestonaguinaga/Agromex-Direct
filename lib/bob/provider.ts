@@ -24,7 +24,7 @@ export const PROVIDER_INFO: Record<
     label: "Claude (Anthropic)",
     models: ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"],
     keyUrl: "https://console.anthropic.com/settings/keys",
-    keyHint: "console.anthropic.com → API keys. Pay-as-you-go; a chat costs cents.",
+    keyHint: "console.anthropic.com → API keys. Pay-as-you-go; a chat costs cents. Claude can also search the web for real product links.",
   },
   openai: {
     label: "OpenAI (GPT)",
@@ -68,17 +68,40 @@ export async function runTurn(args: RunTurnArgs): Promise<string> {
 
 /* ── Anthropic ───────────────────────────────────────────────────── */
 
+/**
+ * Anthropic's web search/fetch run server-side, so Bob can find real
+ * product pages (and read links the user pastes) straight from a static
+ * site. Newer models take the 20260209 variants; Haiku 4.5 the basic ones.
+ */
+function serverTools(model: string): Anthropic.Messages.ToolUnion[] {
+  const modern = !model.includes("haiku-4-5");
+  return modern
+    ? [
+        { type: "web_search_20260209", name: "web_search", max_uses: 6 },
+        { type: "web_fetch_20260209", name: "web_fetch", max_uses: 6 },
+      ]
+    : [
+        { type: "web_search_20250305", name: "web_search", max_uses: 6 },
+        { type: "web_fetch_20250910", name: "web_fetch", max_uses: 6 },
+      ];
+}
+
 async function runAnthropic(args: RunTurnArgs): Promise<string> {
   const client = new Anthropic({
     apiKey: args.config.apiKey,
     dangerouslyAllowBrowser: true,
   });
 
-  const tools: Anthropic.Tool[] = args.tools.map((t) => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.input_schema as Anthropic.Tool.InputSchema,
-  }));
+  const tools: Anthropic.Messages.ToolUnion[] = [
+    ...args.tools.map(
+      (t): Anthropic.Tool => ({
+        name: t.name,
+        description: t.description,
+        input_schema: t.input_schema as Anthropic.Tool.InputSchema,
+      }),
+    ),
+    ...serverTools(args.config.model),
+  ];
 
   const messages: Anthropic.MessageParam[] = [
     ...args.history.map((h) => ({ role: h.role, content: h.text })),
@@ -104,6 +127,16 @@ async function runAnthropic(args: RunTurnArgs): Promise<string> {
 
     if (response.stop_reason === "refusal") {
       return "I can't help with that one. Anything else on the quote?";
+    }
+
+    // Server-side tools (web search/fetch) can pause a long turn — resume
+    // by handing the partial content back unchanged.
+    if (response.stop_reason === "pause_turn") {
+      if (response.content.some((b) => b.type === "server_tool_use")) {
+        args.onStatus?.("searching the web…");
+      }
+      messages.push({ role: "assistant", content: response.content });
+      continue;
     }
 
     if (response.stop_reason === "tool_use") {

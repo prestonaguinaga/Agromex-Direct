@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Project } from "@/lib/types";
 import { BOB_TOOLS, applyTool, sheetSnapshot } from "@/lib/bob/tools";
-import { SYSTEM_STABLE } from "@/lib/bob/knowledge";
+import { systemFor } from "@/lib/bob/knowledge";
 import {
   DEFAULT_MODEL,
   PROVIDER_INFO,
@@ -132,7 +132,7 @@ export function BobChat({
     try {
       const reply = await runTurn({
         config,
-        systemStable: SYSTEM_STABLE,
+        systemStable: systemFor(config.provider),
         systemDynamic: `CURRENT SHEET SNAPSHOT\n${sheetSnapshot(working)}`,
         history,
         user: text,

@@ -11,6 +11,7 @@ const NAV = [
   { label: "Pricing", href: "/#pricing" },
   { label: "FAQ", href: "/#faq" },
   { label: "Build your brief", href: "/#brief" },
+  { label: "Subcontractors", href: "/subcontractors/" },
 ];
 
 export function Footer() {

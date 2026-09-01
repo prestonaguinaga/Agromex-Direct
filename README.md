@@ -116,6 +116,59 @@ into their mail client.
 Validation, the honeypot and the success state all run in the browser, so none
 of that depends on the endpoint being configured.
 
+## The subcontractor onboarding link
+
+**`/subcontractors/`** is the page to send anyone who asks you for work. Instead
+of answering the same questions over text — what's your trade, how long have you
+been at it, what do you charge, when are you free — you reply with one link and
+their whole application arrives in your inbox in one piece.
+
+The form collects: name, business, contact details, trade (dropdown), years of
+experience, service area, availability, typical rate, portfolio links, a
+free-text "tell us about your work", and a general-questions box for people who
+aren't applying yet.
+
+Once deployed (see below), the link you share is:
+
+```
+https://<your-domain>/subcontractors/
+```
+
+Configuration lives in `site.config.ts` under `subcontractors`:
+
+- **`formEndpoint`** — where applications post. Set up a second Formspree form
+  (separate from the contact form's, so applications don't mix with client
+  leads) and paste its endpoint here. Left empty it falls back to the contact
+  form's endpoint, then to opening the applicant's email app pre-filled — so
+  the page works before you configure anything.
+- **`trades`** — the specialty dropdown. Edit it to whatever you actually sub
+  out; the form renders whatever is listed.
+
+The page copy sits at the top of `app/subcontractors/Client.tsx`.
+
+## Deploying on Cloudflare Pages (the link, start to finish)
+
+The site is a static export, so Cloudflare Pages hosts it free. Two ways:
+
+**Connected to this repo (recommended — redeploys on every push):**
+
+1. In the [Cloudflare dashboard](https://dash.cloudflare.com) go to
+   **Workers & Pages → Create → Pages → Connect to Git** and pick this
+   repository and branch.
+2. Build settings: framework preset **Next.js (Static HTML Export)** — or set
+   build command `npm run build` and build output directory `out` manually.
+3. Deploy. You get `https://<project>.pages.dev`, and the onboarding link is
+   `https://<project>.pages.dev/subcontractors/`.
+4. Optional: **Custom domains** on the project attaches a domain you already
+   have on Cloudflare, making the link `https://yourdomain.com/subcontractors/`.
+
+**Direct upload (no Git connection):** run `npm run build` locally, then
+**Workers & Pages → Create → Pages → Upload assets** and drop the `out/`
+folder in.
+
+After the first deploy, set `url` in `site.config.ts` to the live address and
+push — the sitemap, canonical URLs and share metadata read from it.
+
 ## The demo sites
 
 | Route | Business | The interactive thing |

@@ -19,6 +19,7 @@ type SiteConfig = {
   promises: { value: string; unit: string; label: string; prefix?: string }[];
   startingPrice: string;
   formEndpoint: string;
+  subcontractors: { formEndpoint: string; trades: string[] };
 };
 
 export const site: SiteConfig = {
@@ -74,6 +75,30 @@ export const site: SiteConfig = {
    * setting the endpoint is a smoother experience, so do it before launch.
    */
   formEndpoint: "",
+
+  /**
+   * The subcontractor onboarding page at /subcontractors/ — the link to send
+   * anyone who asks you for work. Applications post to `formEndpoint` below
+   * (set up the same way as the contact form's, and worth keeping as a
+   * SEPARATE form so applications don't mix with client leads). Left empty,
+   * it falls back to the contact form's endpoint, then to opening the
+   * applicant's email app pre-filled.
+   *
+   * `trades` is the specialty dropdown on that form. Edit it to whatever you
+   * actually sub out — the form renders whatever is listed here.
+   */
+  subcontractors: {
+    formEndpoint: "",
+    trades: [
+      "Web design",
+      "Web development",
+      "Copywriting / content",
+      "SEO",
+      "Branding / logo design",
+      "Photography / video",
+      "Something else",
+    ],
+  },
 };
 
 export type Site = SiteConfig;

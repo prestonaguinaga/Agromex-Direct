@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subcontractors — Monarch Construction</title>
+<meta name="description" content="Take on subcontract work with Monarch Construction in Dallas–Fort Worth. One form covers your trade, crew, insurance, rates and availability.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 22 8 10l8 7 8-7 4 12z' fill='%23C05207'/%3E%3Crect x='4' y='24' width='24' height='3' fill='%23171410'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   MONARCH — EDIT THESE FOUR LINES AND NOTHING ELSE
+   ═══════════════════════════════════════════════════════════════════════
+   FORM_ENDPOINT  Where applications are sent. Make a free form at
+                  formspree.io and paste its URL here, e.g.
+                  "https://formspree.io/f/xxxxxxxx". Applications then
+                  arrive by email automatically.
+   CONTACT_EMAIL  Fallback if no endpoint is set: submitting opens the
+                  applicant's email app pre-addressed to this address.
+                  If BOTH are empty, the form still works — it gives the
+                  applicant their finished application to copy and send
+                  back to whoever shared the link.
+   ═══════════════════════════════════════════════════════════════════════ */
+const FORM_ENDPOINT = "";
+const CONTACT_EMAIL = "";
+const COMPANY_NAME  = "Monarch Construction";
+const COMPANY_AREA  = "Dallas–Fort Worth";
+</script>
+
+<style>
+  :root {
+    --paper:      #F6F2EA;
+    --card:       #FFFDF8;
+    --ink:        #171410;
+    --ink-soft:   #5C5443;
+    --line:       rgba(23, 20, 16, 0.16);
+    --line-faint: rgba(23, 20, 16, 0.08);
+    --accent:     #C05207;
+    --accent-hot: #D9640B;
+    --accent-dim: rgba(192, 82, 7, 0.08);
+
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body:    "Libre Franklin", Georgia, sans-serif;
+    --mono:    "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--accent); color: #fff; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  /* Faint drafting grid behind everything — the blueprint under the job. */
+  .grid-bg {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--line-faint) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line-faint) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+  }
+
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+  header {
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .masthead {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 1.1rem 0;
+  }
+  .brand { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: inherit; }
+  .brand svg { display: block; }
+  .brand-name {
+    font-family: var(--display); font-weight: 700; font-size: 1.7rem;
+    letter-spacing: 0.06em; line-height: 1; text-transform: uppercase;
+  }
+  .brand-sub {
+    font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--ink-soft); margin-top: 0.3rem;
+  }
+
+  .lang {
+    display: inline-flex; border: 1.5px solid var(--ink); border-radius: 999px;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .lang button {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    padding: 0.45rem 0.85rem; border: 0; background: transparent;
+    color: var(--ink-soft); cursor: pointer; text-transform: uppercase;
+  }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  /* ── Hero ───────────────────────────────────────────────────────── */
+  .hero { padding: 3.5rem 0 2.75rem; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--accent); display: flex;
+    align-items: center; gap: 0.75rem;
+  }
+  .eyebrow::before {
+    content: ""; width: 2.2rem; height: 2px; background: var(--accent);
+  }
+
+  h1 {
+    font-family: var(--display); font-weight: 700; text-transform: uppercase;
+    font-size: clamp(3rem, 9vw, 5.75rem); line-height: 0.92;
+    letter-spacing: 0.01em; margin-top: 1.1rem; max-width: 14ch;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+
+  .lede {
+    margin-top: 1.4rem; max-width: 34rem; font-size: 1.05rem;
+    color: var(--ink-soft);
+  }
+
+  /* Dimension line — a drafting flourish under the hero. */
+  .dim {
+    margin-top: 2.4rem; display: flex; align-items: center; gap: 0.6rem;
+    color: var(--ink-soft);
+  }
+  .dim .tick { width: 2px; height: 14px; background: currentColor; }
+  .dim .rail { flex: 1; height: 1.5px; background: currentColor; }
+  .dim .len {
+    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.22em;
+    text-transform: uppercase; white-space: nowrap; padding: 0 0.4rem;
+  }
+
+  /* ── Steps ──────────────────────────────────────────────────────── */
+  .steps {
+    display: grid; gap: 0; border: 1.5px solid var(--ink);
+    background: var(--card); margin-bottom: 3rem;
+  }
+  @media (min-width: 720px) { .steps { grid-template-columns: 1fr 1fr 1fr; } }
+  .step { padding: 1.25rem 1.4rem; border-top: 1.5px solid var(--ink); }
+  .step:first-child { border-top: 0; }
+  @media (min-width: 720px) {
+    .step { border-top: 0; border-left: 1.5px solid var(--ink); }
+    .step:first-child { border-left: 0; }
+  }
+  .step-no {
+    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.22em;
+    color: var(--accent);
+  }
+  .step h3 {
+    font-family: var(--display); font-weight: 600; text-transform: uppercase;
+    font-size: 1.25rem; letter-spacing: 0.04em; margin-top: 0.35rem;
+  }
+  .step p { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.3rem; }
+
+  /* ── Form ───────────────────────────────────────────────────────── */
+  .board {
+    background: var(--card); border: 2px solid var(--ink);
+    box-shadow: 8px 8px 0 var(--ink);
+    margin-bottom: 4rem;
+  }
+  .board-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 1rem 1.4rem; border-bottom: 2px solid var(--ink);
+    background: var(--ink); color: var(--paper);
+  }
+  .board-head .t {
+    font-family: var(--display); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; font-size: 1.15rem;
+  }
+  .board-head .req {
+    font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em;
+    text-transform: uppercase; opacity: 0.7;
+  }
+
+  form { padding: 1.6rem 1.4rem 2rem; }
+  @media (min-width: 720px) { form { padding: 2.2rem 2.4rem 2.6rem; } }
+
+  .sect { margin-top: 2.2rem; }
+  .sect:first-child { margin-top: 0; }
+  .sect-label {
+    display: flex; align-items: baseline; gap: 0.7rem;
+    border-bottom: 1.5px solid var(--ink); padding-bottom: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+  .sect-label .no {
+    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.18em;
+    color: var(--accent);
+  }
+  .sect-label .name {
+    font-family: var(--display); font-weight: 600; text-transform: uppercase;
+    font-size: 1.2rem; letter-spacing: 0.05em;
+  }
+
+  .row { display: grid; gap: 1.1rem; margin-top: 1.1rem; }
+  .row:first-of-type { margin-top: 0; }
+  @media (min-width: 720px) { .row.two { grid-template-columns: 1fr 1fr; } }
+
+  .fld { display: flex; flex-direction: column; gap: 0.4rem; }
+  .fld label {
+    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .fld label b { color: var(--accent); font-weight: 500; }
+
+  input[type="text"], input[type="email"], input[type="tel"], select, textarea {
+    width: 100%; border: 1.5px solid var(--line); background: #fff;
+    border-radius: 0; padding: 0.8rem 0.9rem; font-family: var(--body);
+    font-size: 1rem; color: var(--ink); transition: border-color 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  textarea { resize: vertical; min-height: 7rem; }
+  input:hover, select:hover, textarea:hover { border-color: var(--ink-soft); }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent); outline: none;
+  }
+  ::placeholder { color: rgba(23, 20, 16, 0.35); }
+
+  .selwrap { position: relative; }
+  .selwrap::after {
+    content: ""; position: absolute; right: 0.95rem; top: 50%;
+    width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    transform: translateY(-70%) rotate(45deg); pointer-events: none;
+  }
+  select { padding-right: 2.4rem; }
+
+  .fld.err input, .fld.err select, .fld.err textarea { border-color: var(--accent); }
+  .fld .msg {
+    display: none; font-size: 0.78rem; color: var(--accent); font-weight: 500;
+  }
+  .fld.err .msg { display: block; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip {
+    font-family: var(--body); font-size: 0.85rem; font-weight: 500;
+    border: 1.5px solid var(--line); background: #fff; color: var(--ink-soft);
+    padding: 0.55rem 0.95rem; border-radius: 999px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--ink); color: var(--ink); }
+  .chip[aria-pressed="true"] {
+    border-color: var(--accent); background: var(--accent-dim);
+    color: var(--ink);
+  }
+  .chip[aria-pressed="true"]::before {
+    content: "✓ "; color: var(--accent); font-weight: 600;
+  }
+
+  .hint { font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.45rem; }
+
+  .form-alert {
+    display: none; margin-top: 1.4rem; border: 1.5px solid var(--accent);
+    background: var(--accent-dim); padding: 0.85rem 1rem; font-size: 0.9rem;
+  }
+  .form-alert.on { display: block; }
+
+  .actions {
+    margin-top: 1.8rem; display: flex; flex-wrap: wrap; align-items: center;
+    gap: 1.1rem;
+  }
+  .btn {
+    font-family: var(--display); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.09em; font-size: 1.15rem; border: 2px solid var(--ink);
+    background: var(--accent); color: #fff; padding: 0.85rem 2.2rem;
+    cursor: pointer; box-shadow: 4px 4px 0 var(--ink);
+    transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+  }
+  .btn:hover { background: var(--accent-hot); }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .fine { font-size: 0.78rem; color: var(--ink-soft); max-width: 18rem; }
+
+  /* Honeypot — off-canvas, invisible to people. */
+  .hp { position: absolute; left: -9999px; top: 0; }
+
+  /* ── Done / copy states ─────────────────────────────────────────── */
+  .done { display: none; padding: 3.5rem 1.4rem; text-align: center; }
+  .done.on { display: block; }
+  .done .mark {
+    width: 4.5rem; height: 4.5rem; margin: 0 auto; border-radius: 50%;
+    background: var(--accent); color: #fff; display: flex;
+    align-items: center; justify-content: center; font-size: 2rem;
+    font-weight: 600; box-shadow: 4px 4px 0 var(--ink);
+  }
+  .done h2 {
+    font-family: var(--display); font-weight: 700; text-transform: uppercase;
+    font-size: 2.4rem; letter-spacing: 0.03em; margin-top: 1.4rem;
+  }
+  .done p { max-width: 26rem; margin: 0.8rem auto 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+  .copybox {
+    text-align: left; max-width: 34rem; margin: 1.6rem auto 0;
+    border: 1.5px solid var(--line); background: #fff; padding: 1rem 1.1rem;
+    font-family: var(--mono); font-size: 0.74rem; line-height: 1.7;
+    white-space: pre-wrap; word-break: break-word; max-height: 18rem; overflow: auto;
+  }
+  .done .btn { margin-top: 1.4rem; }
+  .again {
+    display: inline-block; margin-top: 1.6rem; font-family: var(--mono);
+    font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-soft); background: none; border: 0; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 4px;
+  }
+  .again:hover { color: var(--ink); }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+  footer {
+    border-top: 2px solid var(--ink); padding: 1.5rem 0 2.5rem;
+  }
+  footer .wrap {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 2rem;
+    justify-content: space-between; align-items: center;
+  }
+  footer p, footer a {
+    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg" aria-hidden="true"></div>
+
+<header>
+  <div class="wrap masthead">
+    <a class="brand" href="https://monarchdevelopmentdfw.com/">
+      <svg width="40" height="34" viewBox="0 0 40 34" aria-hidden="true">
+        <path d="M4 24 10 6l10 9L30 6l6 18z" fill="#C05207"/>
+        <rect x="4" y="27" width="32" height="4" fill="#171410"/>
+      </svg>
+      <span>
+        <span class="brand-name">Monarch</span>
+        <span class="brand-sub" id="brandSub">Construction · DFW</span>
+      </span>
+    </a>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" id="langEn" aria-pressed="true">EN</button>
+      <button type="button" id="langEs" aria-pressed="false">ES</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow" data-t="eyebrow">Subcontractor onboarding</p>
+    <h1><span data-t="h1a">Build with</span> <em>Monarch.</em></h1>
+    <p class="lede" data-t="lede">
+      Asked us about work? This is the fastest way in. Tell us your trade, your
+      crew, your rates and your paperwork — five minutes, one form, straight to
+      the people who assign jobs across Dallas–Fort Worth.
+    </p>
+    <div class="dim" aria-hidden="true">
+      <span class="tick"></span><span class="rail"></span>
+      <span class="len" data-t="dim">± 5 min</span>
+      <span class="rail"></span><span class="tick"></span>
+    </div>
+  </section>
+
+  <section class="steps" aria-label="How it works">
+    <div class="step">
+      <p class="step-no">01</p>
+      <h3 data-t="s1t">Send the form</h3>
+      <p data-t="s1p">Skip anything that doesn't apply. Questions welcome too.</p>
+    </div>
+    <div class="step">
+      <p class="step-no">02</p>
+      <h3 data-t="s2t">You go on file</h3>
+      <p data-t="s2p">We match trade, area, rates and availability to upcoming jobs.</p>
+    </div>
+    <div class="step">
+      <p class="step-no">03</p>
+      <h3 data-t="s3t">We call you</h3>
+      <p data-t="s3p">When the right job comes up, you hear from us directly.</p>
+    </div>
+  </section>
+
+  <section class="board">
+    <div class="board-head">
+      <span class="t" data-t="boardT">Subcontractor application</span>
+      <span class="req" data-t="boardReq">* required</span>
+    </div>
+
+    <form id="appForm" novalidate>
+      <!-- Honeypot -->
+      <div class="hp" aria-hidden="true">
+        <label for="website">Leave this empty</label>
+        <input id="website" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
+      <div class="sect">
+        <div class="sect-label"><span class="no">01 /</span><span class="name" data-t="sec1">Who you are</span></div>
+        <div class="row two">
+          <div class="fld" id="f-name">
+            <label for="name"><span data-t="lName">Your name</span> <b>*</b></label>
+            <input type="text" id="name" name="name" autocomplete="name">
+            <span class="msg" data-t="eName">Please tell us your name.</span>
+          </div>
+          <div class="fld">
+            <label for="company" data-t="lCompany">Company / DBA</label>
+            <input type="text" id="company" name="company" autocomplete="organization" data-t-ph="phOptional" placeholder="Optional">
+          </div>
+        </div>
+        <div class="row two">
+          <div class="fld" id="f-phone">
+            <label for="phone"><span data-t="lPhone">Phone</span> <b>*</b></label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel">
+            <span class="msg" data-t="ePhone">That phone number doesn't look right.</span>
+          </div>
+          <div class="fld" id="f-email">
+            <label for="email"><span data-t="lEmail">Email</span> <b>*</b></label>
+            <input type="email" id="email" name="email" autocomplete="email">
+            <span class="msg" data-t="eEmail">That email doesn't look right.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-label"><span class="no">02 /</span><span class="name" data-t="sec2">Your trade</span></div>
+        <div class="row two">
+          <div class="fld" id="f-trade">
+            <label for="trade"><span data-t="lTrade">Trade</span> <b>*</b></label>
+            <div class="selwrap">
+              <select id="trade" name="trade"></select>
+            </div>
+            <span class="msg" data-t="eTrade">Pick your trade — “other” works too.</span>
+          </div>
+          <div class="fld">
+            <label for="years" data-t="lYears">Years in the trade</label>
+            <div class="selwrap"><select id="years" name="years"></select></div>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="fld">
+            <label for="crew" data-t="lCrew">Crew size</label>
+            <div class="selwrap"><select id="crew" name="crew"></select></div>
+          </div>
+          <div class="fld">
+            <label for="area" data-t="lArea">Service area</label>
+            <input type="text" id="area" name="area" data-t-ph="phArea" placeholder="e.g. Dallas, Fort Worth, Arlington…">
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-label"><span class="no">03 /</span><span class="name" data-t="sec3">The paperwork</span></div>
+        <div class="fld">
+          <label id="credsLabel" data-t="lCreds">Check everything you have — be straight with us, none of these are automatic no's</label>
+          <div class="chips" id="creds" role="group" aria-labelledby="credsLabel"></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-label"><span class="no">04 /</span><span class="name" data-t="sec4">Rates &amp; availability</span></div>
+        <div class="row two">
+          <div class="fld">
+            <label for="rate" data-t="lRate">Typical rate</label>
+            <input type="text" id="rate" name="rate" data-t-ph="phRate" placeholder="Hourly, day rate or by the job — optional">
+          </div>
+          <div class="fld">
+            <label id="availLabel" data-t="lAvail">Availability</label>
+            <div class="chips" id="avail" role="group" aria-labelledby="availLabel"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-label"><span class="no">05 /</span><span class="name" data-t="sec5">Your work</span></div>
+        <div class="fld" id="f-about">
+          <label for="about"><span data-t="lAbout">Tell us about your work</span> <b>*</b></label>
+          <textarea id="about" name="about" data-t-ph="phAbout" placeholder="The kind of jobs you take, builders or GCs you've worked with, a couple of projects you're proud of, references if you have them."></textarea>
+          <span class="msg" data-t="eAbout">A couple of sentences is plenty — just not blank.</span>
+        </div>
+        <div class="row">
+          <div class="fld">
+            <label for="questions" data-t="lQuestions">Questions for us</label>
+            <textarea id="questions" name="questions" rows="3" data-t-ph="phQuestions" placeholder="How we pay, how jobs get assigned, anything else — optional."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <p class="form-alert" id="formAlert" role="alert" data-t="alertFix">Something didn't go through. Have another look above.</p>
+
+      <div class="actions">
+        <button type="submit" class="btn" id="sendBtn" data-t="btnSend">Send it in</button>
+        <p class="fine" data-t="fine">Goes straight to Monarch, nowhere else. We use it to match you with jobs — nothing more.</p>
+      </div>
+    </form>
+
+    <!-- Sent -->
+    <div class="done" id="doneSent">
+      <div class="mark">✓</div>
+      <h2 data-t="doneT">You're on file.</h2>
+      <p data-t="doneP">We read every application. When a job matches your trade, area and availability, you'll get a call — and if you asked a question, you'll hear back either way.</p>
+      <button type="button" class="again" id="againBtn" data-t="again">Send another</button>
+    </div>
+
+    <!-- No endpoint + no email configured: hand them their application to send back. -->
+    <div class="done" id="doneCopy">
+      <div class="mark">✓</div>
+      <h2 data-t="copyT">Application ready.</h2>
+      <p data-t="copyP">One last step: copy your application below and send it back to whoever shared this link with you — text or email both work.</p>
+      <div class="copybox" id="copyText"></div>
+      <button type="button" class="btn" id="copyBtn" data-t="btnCopy">Copy application</button>
+      <br>
+      <button type="button" class="again" id="againBtn2" data-t="again2">Start over</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>© <span id="year"></span> <span id="footName">Monarch Construction</span> · <span data-t="footArea">Dallas–Fort Worth</span></p>
+    <a href="https://monarchdevelopmentdfw.com/">monarchdevelopmentdfw.com</a>
+  </div>
+</footer>
+
+<script>
+/* ─────────────────────────── Copy, both languages ─────────────────────── */
+const T = {
+  en: {
+    eyebrow: "Subcontractor onboarding",
+    h1a: "Build with",
+    lede: "Asked us about work? This is the fastest way in. Tell us your trade, your crew, your rates and your paperwork — five minutes, one form, straight to the people who assign jobs across Dallas–Fort Worth.",
+    dim: "± 5 min",
+    s1t: "Send the form", s1p: "Skip anything that doesn't apply. Questions welcome too.",
+    s2t: "You go on file", s2p: "We match trade, area, rates and availability to upcoming jobs.",
+    s3t: "We call you",    s3p: "When the right job comes up, you hear from us directly.",
+    boardT: "Subcontractor application", boardReq: "* required",
+    sec1: "Who you are", sec2: "Your trade", sec3: "The paperwork",
+    sec4: "Rates & availability", sec5: "Your work",
+    lName: "Your name", lCompany: "Company / DBA", lPhone: "Phone", lEmail: "Email",
+    lTrade: "Trade", lYears: "Years in the trade", lCrew: "Crew size", lArea: "Service area",
+    lCreds: "Check everything you have — be straight with us, none of these are automatic no's",
+    lRate: "Typical rate", lAvail: "Availability",
+    lAbout: "Tell us about your work", lQuestions: "Questions for us",
+    phOptional: "Optional",
+    phArea: "e.g. Dallas, Fort Worth, Arlington…",
+    phRate: "Hourly, day rate or by the job — optional",
+    phAbout: "The kind of jobs you take, builders or GCs you've worked with, a couple of projects you're proud of, references if you have them.",
+    phQuestions: "How we pay, how jobs get assigned, anything else — optional.",
+    eName: "Please tell us your name.",
+    ePhone: "That phone number doesn't look right.",
+    eEmail: "That email doesn't look right.",
+    eTrade: "Pick your trade — “other” works too.",
+    eAbout: "A couple of sentences is plenty — just not blank.",
+    alertFix: "Something didn't go through. Have another look above.",
+    alertSend: "We couldn't send that. Try again in a minute.",
+    btnSend: "Send it in", btnSending: "Sending…",
+    fine: "Goes straight to Monarch, nowhere else. We use it to match you with jobs — nothing more.",
+    doneT: "You're on file.",
+    doneP: "We read every application. When a job matches your trade, area and availability, you'll get a call — and if you asked a question, you'll hear back either way.",
+    again: "Send another",
+    copyT: "Application ready.",
+    copyP: "One last step: copy your application below and send it back to whoever shared this link with you — text or email both work.",
+    btnCopy: "Copy application", btnCopied: "Copied ✓", again2: "Start over",
+    footArea: "Dallas–Fort Worth",
+    brandSub: "Construction · DFW",
+    trades: ["Select your trade…", "Concrete & foundations", "Framing & carpentry", "Electrical", "Plumbing", "HVAC", "Roofing", "Drywall & paint", "Flooring & tile", "Masonry & stone", "Siding & exterior", "Windows & doors", "Grading & excavation", "Landscaping & irrigation", "Demolition", "General labor / cleanup", "Other"],
+    years: ["Under 2 years", "2–5 years", "5–10 years", "10–20 years", "20+ years"],
+    crew: ["Just me", "2–4", "5–10", "More than 10"],
+    creds: ["General liability insurance", "Workers' comp", "Licensed for my trade", "Own tools & equipment", "Own transportation", "Can provide W-9"],
+    avail: ["Available now", "Free in a few weeks", "Just introducing myself"],
+    subject: "Subcontractor application",
+    fields: { name: "Name", company: "Company", phone: "Phone", email: "Email", trade: "Trade", years: "Experience", crew: "Crew size", area: "Service area", creds: "Has", rate: "Typical rate", avail: "Availability", about: "About their work", questions: "Questions" },
+    none: "—",
+  },
+  es: {
+    eyebrow: "Registro de subcontratistas",
+    h1a: "Construye con",
+    lede: "¿Nos preguntaste por trabajo? Esta es la vía más rápida. Cuéntanos tu oficio, tu cuadrilla, tus tarifas y tus papeles — cinco minutos, un formulario, directo a quienes asignan los trabajos en Dallas–Fort Worth.",
+    dim: "± 5 min",
+    s1t: "Manda el formulario", s1p: "Salta lo que no aplique. Las preguntas también son bienvenidas.",
+    s2t: "Quedas registrado", s2p: "Cruzamos oficio, zona, tarifas y disponibilidad con los próximos trabajos.",
+    s3t: "Te llamamos", s3p: "Cuando salga el trabajo indicado, te contactamos directamente.",
+    boardT: "Solicitud de subcontratista", boardReq: "* obligatorio",
+    sec1: "Quién eres", sec2: "Tu oficio", sec3: "Los papeles",
+    sec4: "Tarifas y disponibilidad", sec5: "Tu trabajo",
+    lName: "Tu nombre", lCompany: "Empresa / razón social", lPhone: "Teléfono", lEmail: "Correo",
+    lTrade: "Oficio", lYears: "Años en el oficio", lCrew: "Tamaño de cuadrilla", lArea: "Zona de trabajo",
+    lCreds: "Marca todo lo que tengas — dinos la verdad, ninguno es un “no” automático",
+    lRate: "Tarifa habitual", lAvail: "Disponibilidad",
+    lAbout: "Cuéntanos de tu trabajo", lQuestions: "Preguntas para nosotros",
+    phOptional: "Opcional",
+    phArea: "p. ej. Dallas, Fort Worth, Arlington…",
+    phRate: "Por hora, por día o por trabajo — opcional",
+    phAbout: "Los trabajos que tomas, constructoras o contratistas con quienes has trabajado, un par de proyectos de los que estés orgulloso, referencias si tienes.",
+    phQuestions: "Cómo pagamos, cómo se asignan los trabajos, lo que sea — opcional.",
+    eName: "Dinos tu nombre, por favor.",
+    ePhone: "Ese teléfono no se ve bien.",
+    eEmail: "Ese correo no se ve bien.",
+    eTrade: "Elige tu oficio — “otro” también sirve.",
+    eAbout: "Con un par de frases basta — pero no lo dejes vacío.",
+    alertFix: "Algo no pasó. Revisa arriba, por favor.",
+    alertSend: "No se pudo enviar. Intenta de nuevo en un minuto.",
+    btnSend: "Enviar", btnSending: "Enviando…",
+    fine: "Va directo a Monarch, a ningún otro lado. Lo usamos para conectarte con trabajos — nada más.",
+    doneT: "Quedaste registrado.",
+    doneP: "Leemos cada solicitud. Cuando un trabajo coincida con tu oficio, zona y disponibilidad, te llamamos — y si hiciste una pregunta, te respondemos de todos modos.",
+    again: "Enviar otra",
+    copyT: "Solicitud lista.",
+    copyP: "Último paso: copia tu solicitud aquí abajo y mándasela a la persona que te compartió este enlace — por mensaje o correo.",
+    btnCopy: "Copiar solicitud", btnCopied: "Copiado ✓", again2: "Empezar de nuevo",
+    footArea: "Dallas–Fort Worth",
+    brandSub: "Construcción · DFW",
+    trades: ["Elige tu oficio…", "Concreto y cimientos", "Estructura y carpintería", "Electricidad", "Plomería", "Aire acondicionado (HVAC)", "Techos", "Tablaroca y pintura", "Pisos y azulejo", "Albañilería y piedra", "Fachadas y exteriores", "Ventanas y puertas", "Nivelación y excavación", "Jardinería y riego", "Demolición", "Ayudante general / limpieza", "Otro"],
+    years: ["Menos de 2 años", "2–5 años", "5–10 años", "10–20 años", "Más de 20 años"],
+    crew: ["Solo yo", "2–4", "5–10", "Más de 10"],
+    creds: ["Seguro de responsabilidad civil", "Seguro de compensación laboral", "Licencia de mi oficio", "Herramienta y equipo propios", "Transporte propio", "Puedo dar W-9"],
+    avail: ["Disponible ya", "Libre en unas semanas", "Solo me presento"],
+    subject: "Solicitud de subcontratista",
+    fields: { name: "Nombre", company: "Empresa", phone: "Teléfono", email: "Correo", trade: "Oficio", years: "Experiencia", crew: "Cuadrilla", area: "Zona", creds: "Tiene", rate: "Tarifa", avail: "Disponibilidad", about: "Sobre su trabajo", questions: "Preguntas" },
+    none: "—",
+  },
+};
+
+let lang = "en";
+const $ = (id) => document.getElementById(id);
+const t = () => T[lang];
+
+/* ── chips ── */
+const picked = { creds: new Set(), avail: 0 };
+
+function renderChips() {
+  const creds = $("creds");
+  creds.innerHTML = "";
+  t().creds.forEach((label, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = label;
+    b.setAttribute("aria-pressed", picked.creds.has(i) ? "true" : "false");
+    b.addEventListener("click", () => {
+      picked.creds.has(i) ? picked.creds.delete(i) : picked.creds.add(i);
+      b.setAttribute("aria-pressed", picked.creds.has(i) ? "true" : "false");
+    });
+    creds.appendChild(b);
+  });
+
+  const avail = $("avail");
+  avail.innerHTML = "";
+  t().avail.forEach((label, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = label;
+    b.setAttribute("aria-pressed", picked.avail === i ? "true" : "false");
+    b.addEventListener("click", () => {
+      picked.avail = i;
+      [...avail.children].forEach((c, j) =>
+        c.setAttribute("aria-pressed", j === i ? "true" : "false"));
+    });
+    avail.appendChild(b);
+  });
+}
+
+function renderSelect(id, options, firstIsPlaceholder) {
+  const sel = $(id);
+  const keep = sel.selectedIndex;
+  sel.innerHTML = "";
+  options.forEach((label, i) => {
+    const o = document.createElement("option");
+    o.textContent = label; o.value = String(i);
+    if (firstIsPlaceholder && i === 0) { o.disabled = true; }
+    sel.appendChild(o);
+  });
+  sel.selectedIndex = keep >= 0 && keep < options.length ? keep : 0;
+}
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((el) => {
+    const key = el.getAttribute("data-t");
+    if (t()[key] !== undefined) el.textContent = t()[key];
+  });
+  document.querySelectorAll("[data-t-ph]").forEach((el) => {
+    const key = el.getAttribute("data-t-ph");
+    if (t()[key] !== undefined) el.placeholder = t()[key];
+  });
+  renderSelect("trade", t().trades, true);
+  renderSelect("years", t().years, false);
+  renderSelect("crew", t().crew, false);
+  renderChips();
+  $("langEn").setAttribute("aria-pressed", lang === "en" ? "true" : "false");
+  $("langEs").setAttribute("aria-pressed", lang === "es" ? "true" : "false");
+}
+
+$("langEn").addEventListener("click", () => { lang = "en"; applyLang(); });
+$("langEs").addEventListener("click", () => { lang = "es"; applyLang(); });
+
+/* ── validation ── */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function setErr(id, on) { $(id).classList.toggle("err", on); }
+
+function validate() {
+  let ok = true;
+  const name = $("name").value.trim();
+  setErr("f-name", name.length < 2); ok = ok && name.length >= 2;
+
+  const digits = $("phone").value.replace(/\D/g, "");
+  setErr("f-phone", digits.length < 7); ok = ok && digits.length >= 7;
+
+  const email = $("email").value.trim();
+  setErr("f-email", !EMAIL_RE.test(email)); ok = ok && EMAIL_RE.test(email);
+
+  const tradeOk = $("trade").selectedIndex > 0;
+  setErr("f-trade", !tradeOk); ok = ok && tradeOk;
+
+  const about = $("about").value.trim();
+  const aboutOk = about.length >= 10 && about.length <= 4000;
+  setErr("f-about", !aboutOk); ok = ok && aboutOk;
+
+  return ok;
+}
+
+function gather() {
+  const F = t().fields;
+  const sel = (id, list) => list[$(id).selectedIndex] ?? "";
+  return {
+    [F.name]: $("name").value.trim(),
+    [F.company]: $("company").value.trim() || t().none,
+    [F.phone]: $("phone").value.trim(),
+    [F.email]: $("email").value.trim(),
+    [F.trade]: sel("trade", t().trades),
+    [F.years]: sel("years", t().years),
+    [F.crew]: sel("crew", t().crew),
+    [F.area]: $("area").value.trim() || t().none,
+    [F.creds]: [...picked.creds].sort((a, b) => a - b).map((i) => t().creds[i]).join(", ") || t().none,
+    [F.rate]: $("rate").value.trim() || t().none,
+    [F.avail]: t().avail[picked.avail],
+    [F.about]: $("about").value.trim(),
+    [F.questions]: $("questions").value.trim() || t().none,
+  };
+}
+
+function asText(app) {
+  return Object.entries(app).map(([k, v]) => `${k}: ${v}`).join("\n");
+}
+
+/* ── submit ── */
+const form = $("appForm");
+let sending = false;
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (sending) return;
+  $("formAlert").classList.remove("on");
+
+  // Honeypot: accept silently.
+  if ($("website").value) { showDone("doneSent"); return; }
+
+  if (!validate()) {
+    $("formAlert").textContent = t().alertFix;
+    $("formAlert").classList.add("on");
+    return;
+  }
+
+  const app = gather();
+  const subject = `${t().subject} — ${$("name").value.trim()}`;
+
+  if (FORM_ENDPOINT) {
+    sending = true;
+    $("sendBtn").disabled = true;
+    $("sendBtn").textContent = t().btnSending;
+    try {
+      const res = await fetch(FORM_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ ...app, _subject: subject, language: lang }),
+      });
+      if (!res.ok) throw new Error("send failed");
+      showDone("doneSent");
+    } catch {
+      $("formAlert").textContent = t().alertSend;
+      $("formAlert").classList.add("on");
+    } finally {
+      sending = false;
+      $("sendBtn").disabled = false;
+      $("sendBtn").textContent = t().btnSend;
+    }
+    return;
+  }
+
+  if (CONTACT_EMAIL) {
+    window.location.href =
+      `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(asText(app))}`;
+    showDone("doneSent");
+    return;
+  }
+
+  // Nothing configured: give them the finished application to send back.
+  $("copyText").textContent = `${subject}\n\n${asText(app)}`;
+  showDone("doneCopy");
+});
+
+function showDone(id) {
+  form.style.display = "none";
+  $("doneSent").classList.remove("on");
+  $("doneCopy").classList.remove("on");
+  $(id).classList.add("on");
+  $(id).scrollIntoView({ block: "center" });
+}
+
+function reset() {
+  form.reset();
+  picked.creds.clear();
+  picked.avail = 0;
+  renderChips();
+  ["f-name", "f-phone", "f-email", "f-trade", "f-about"].forEach((id) => setErr(id, false));
+  $("formAlert").classList.remove("on");
+  $("doneSent").classList.remove("on");
+  $("doneCopy").classList.remove("on");
+  form.style.display = "";
+}
+
+$("againBtn").addEventListener("click", reset);
+$("againBtn2").addEventListener("click", reset);
+
+$("copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("copyText").textContent);
+    $("copyBtn").textContent = t().btnCopied;
+    setTimeout(() => { $("copyBtn").textContent = t().btnCopy; }, 2000);
+  } catch {
+    // Clipboard blocked — select the text so a long-press/ctrl-C works.
+    const range = document.createRange();
+    range.selectNodeContents($("copyText"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(range);
+  }
+});
+
+/* ── boot ── */
+$("year").textContent = new Date().getFullYear();
+$("footName").textContent = COMPANY_NAME;
+// Start in Spanish if that's the phone's language.
+if ((navigator.language || "").toLowerCase().startsWith("es")) lang = "es";
+applyLang();
+</script>
+</body>
+</html>

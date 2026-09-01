@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Subcontractors — Monarch Construction</title>
 <meta name="description" content="Take on subcontract work with Monarch Construction in Dallas–Fort Worth. One form covers your trade, crew, insurance, rates and availability.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 22 8 10l8 7 8-7 4 12z' fill='%23C05207'/%3E%3Crect x='4' y='24' width='24' height='3' fill='%23171410'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101722'/%3E%3Cpath d='M5 21 9 9l7 7 7-7 4 12z' fill='%23C6A15B'/%3E%3Crect x='5' y='23' width='22' height='2.5' fill='%23C6A15B'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Jost:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
@@ -32,19 +32,23 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
 
 <style>
   :root {
-    --paper:      #F6F2EA;
-    --card:       #FFFDF8;
-    --ink:        #171410;
-    --ink-soft:   #5C5443;
-    --line:       rgba(23, 20, 16, 0.16);
-    --line-faint: rgba(23, 20, 16, 0.08);
-    --accent:     #C05207;
-    --accent-hot: #D9640B;
-    --accent-dim: rgba(192, 82, 7, 0.08);
+    /* Dark blue-grey ground, warm white type, dull-bronze secondary,
+       gold accents — matched to monarchdevelopmentdfw.com. */
+    --ground:     #0F141D;
+    --ground-2:   #131A25;
+    --card:       #17202E;
+    --field:      #101623;
+    --line:       rgba(240, 236, 226, 0.14);
+    --line-faint: rgba(240, 236, 226, 0.06);
+    --text:       #F2EFE7;
+    --bronze:     #AE9C7C;
+    --gold:       #C6A15B;
+    --gold-hot:   #D9B672;
+    --gold-dim:   rgba(198, 161, 91, 0.12);
+    --err:        #DE9673;
 
-    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
-    --body:    "Libre Franklin", Georgia, sans-serif;
-    --mono:    "IBM Plex Mono", ui-monospace, monospace;
+    --display: "Marcellus", "Times New Roman", serif;
+    --body:    "Jost", "Segoe UI", sans-serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -52,288 +56,293 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
   body {
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--ground);
+    color: var(--text);
     font-family: var(--body);
-    font-size: 16px;
-    line-height: 1.55;
+    font-weight: 300;
+    font-size: 16.5px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
 
-  ::selection { background: var(--accent); color: #fff; }
+  ::selection { background: var(--gold); color: var(--ground); }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--gold);
     outline-offset: 3px;
   }
 
-  /* Faint drafting grid behind everything — the blueprint under the job. */
-  .grid-bg {
-    position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    background-image:
-      linear-gradient(to right, var(--line-faint) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--line-faint) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+  /* ── Faded construction scene behind everything ──────────────────
+     Drawn line-art (tower crane, framed building, low-rise) in bronze
+     at very low opacity — present, never distracting.               */
+  .scene {
+    position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #1A2333 0%, var(--ground) 58%),
+      var(--ground);
+  }
+  .scene svg {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: max(100%, 1500px); height: auto; opacity: 0.16;
+  }
+  .scene::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(15, 20, 29, 0.88) 92%);
   }
 
   .wrap { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
 
   /* ── Header ─────────────────────────────────────────────────────── */
   header {
-    border-bottom: 2px solid var(--ink);
-    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    background: rgba(15, 20, 29, 0.85);
+    backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 10;
   }
   .masthead {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; padding: 1.1rem 0;
+    gap: 1rem; padding: 1.05rem 0;
   }
-  .brand { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: inherit; }
+  .brand { display: flex; align-items: center; gap: 0.85rem; text-decoration: none; color: inherit; }
   .brand svg { display: block; }
   .brand-name {
-    font-family: var(--display); font-weight: 700; font-size: 1.7rem;
-    letter-spacing: 0.06em; line-height: 1; text-transform: uppercase;
+    font-family: var(--display); font-size: 1.55rem; letter-spacing: 0.18em;
+    line-height: 1; text-transform: uppercase; display: block;
   }
   .brand-sub {
-    font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.32em;
-    text-transform: uppercase; color: var(--ink-soft); margin-top: 0.3rem;
+    font-size: 0.6rem; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--bronze); margin-top: 0.35rem; display: block; font-weight: 400;
   }
 
   .lang {
-    display: inline-flex; border: 1.5px solid var(--ink); border-radius: 999px;
+    display: inline-flex; border: 1px solid var(--line); border-radius: 999px;
     overflow: hidden; flex-shrink: 0;
   }
   .lang button {
-    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em;
-    padding: 0.45rem 0.85rem; border: 0; background: transparent;
-    color: var(--ink-soft); cursor: pointer; text-transform: uppercase;
+    font-family: var(--body); font-weight: 500; font-size: 0.7rem;
+    letter-spacing: 0.14em; padding: 0.45rem 0.9rem; border: 0;
+    background: transparent; color: var(--bronze); cursor: pointer;
+    text-transform: uppercase;
   }
-  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .lang button[aria-pressed="true"] { background: var(--gold); color: var(--ground); }
 
   /* ── Hero ───────────────────────────────────────────────────────── */
-  .hero { padding: 3.5rem 0 2.75rem; }
+  .hero { padding: 4.25rem 0 3rem; text-align: center; }
 
   .eyebrow {
-    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.28em;
-    text-transform: uppercase; color: var(--accent); display: flex;
-    align-items: center; gap: 0.75rem;
+    font-size: 0.7rem; font-weight: 500; letter-spacing: 0.42em;
+    text-transform: uppercase; color: var(--gold);
+    display: flex; align-items: center; justify-content: center; gap: 1rem;
   }
-  .eyebrow::before {
-    content: ""; width: 2.2rem; height: 2px; background: var(--accent);
+  .eyebrow::before, .eyebrow::after {
+    content: ""; width: 2.6rem; height: 1px; background: var(--gold);
+    opacity: 0.55;
   }
 
   h1 {
-    font-family: var(--display); font-weight: 700; text-transform: uppercase;
-    font-size: clamp(3rem, 9vw, 5.75rem); line-height: 0.92;
-    letter-spacing: 0.01em; margin-top: 1.1rem; max-width: 14ch;
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(2.6rem, 7.5vw, 4.6rem); line-height: 1.08;
+    letter-spacing: 0.02em; margin: 1.3rem auto 0; max-width: 16ch;
   }
-  h1 em { font-style: normal; color: var(--accent); }
+  h1 em { font-style: normal; color: var(--gold); }
 
   .lede {
-    margin-top: 1.4rem; max-width: 34rem; font-size: 1.05rem;
-    color: var(--ink-soft);
+    margin: 1.5rem auto 0; max-width: 36rem; font-size: 1.06rem;
+    color: var(--bronze); font-weight: 300;
   }
 
-  /* Dimension line — a drafting flourish under the hero. */
+  /* Gold hairline with a diamond — the sign-off under the hero. */
   .dim {
-    margin-top: 2.4rem; display: flex; align-items: center; gap: 0.6rem;
-    color: var(--ink-soft);
+    margin: 2.6rem auto 0; display: flex; align-items: center;
+    justify-content: center; gap: 0.9rem; color: var(--gold); max-width: 30rem;
   }
-  .dim .tick { width: 2px; height: 14px; background: currentColor; }
-  .dim .rail { flex: 1; height: 1.5px; background: currentColor; }
+  .dim .rail { flex: 1; height: 1px; background: currentColor; opacity: 0.4; }
   .dim .len {
-    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.22em;
-    text-transform: uppercase; white-space: nowrap; padding: 0 0.4rem;
+    font-size: 0.66rem; font-weight: 500; letter-spacing: 0.3em;
+    text-transform: uppercase; white-space: nowrap;
   }
+  .dim .tick { width: 7px; height: 7px; transform: rotate(45deg); background: currentColor; }
 
   /* ── Steps ──────────────────────────────────────────────────────── */
   .steps {
-    display: grid; gap: 0; border: 1.5px solid var(--ink);
-    background: var(--card); margin-bottom: 3rem;
+    display: grid; gap: 1px; background: var(--line-faint);
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    margin-bottom: 3rem;
   }
   @media (min-width: 720px) { .steps { grid-template-columns: 1fr 1fr 1fr; } }
-  .step { padding: 1.25rem 1.4rem; border-top: 1.5px solid var(--ink); }
-  .step:first-child { border-top: 0; }
-  @media (min-width: 720px) {
-    .step { border-top: 0; border-left: 1.5px solid var(--ink); }
-    .step:first-child { border-left: 0; }
-  }
+  .step { padding: 1.5rem 1.5rem 1.4rem; background: var(--ground-2); text-align: center; }
   .step-no {
-    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.22em;
-    color: var(--accent);
+    font-family: var(--display); font-size: 0.8rem; letter-spacing: 0.3em;
+    color: var(--gold);
   }
   .step h3 {
-    font-family: var(--display); font-weight: 600; text-transform: uppercase;
-    font-size: 1.25rem; letter-spacing: 0.04em; margin-top: 0.35rem;
+    font-family: var(--display); font-weight: 400; font-size: 1.15rem;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.5rem;
   }
-  .step p { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.3rem; }
+  .step p { font-size: 0.85rem; color: var(--bronze); margin-top: 0.4rem; }
 
   /* ── Form ───────────────────────────────────────────────────────── */
   .board {
-    background: var(--card); border: 2px solid var(--ink);
-    box-shadow: 8px 8px 0 var(--ink);
-    margin-bottom: 4rem;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; overflow: hidden; margin-bottom: 4rem;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.65);
   }
   .board-head {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; padding: 1rem 1.4rem; border-bottom: 2px solid var(--ink);
-    background: var(--ink); color: var(--paper);
+    gap: 1rem; padding: 1.15rem 1.5rem; border-bottom: 1px solid var(--line);
+    background: linear-gradient(to bottom, rgba(198, 161, 91, 0.10), rgba(198, 161, 91, 0.04));
   }
   .board-head .t {
-    font-family: var(--display); font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.08em; font-size: 1.15rem;
+    font-family: var(--display); letter-spacing: 0.14em; font-size: 1.05rem;
+    text-transform: uppercase; color: var(--gold);
   }
   .board-head .req {
-    font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em;
-    text-transform: uppercase; opacity: 0.7;
+    font-size: 0.62rem; font-weight: 400; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--bronze);
   }
 
-  form { padding: 1.6rem 1.4rem 2rem; }
-  @media (min-width: 720px) { form { padding: 2.2rem 2.4rem 2.6rem; } }
+  form { padding: 1.7rem 1.4rem 2.1rem; }
+  @media (min-width: 720px) { form { padding: 2.3rem 2.5rem 2.7rem; } }
 
-  .sect { margin-top: 2.2rem; }
+  .sect { margin-top: 2.3rem; }
   .sect:first-child { margin-top: 0; }
   .sect-label {
-    display: flex; align-items: baseline; gap: 0.7rem;
-    border-bottom: 1.5px solid var(--ink); padding-bottom: 0.5rem;
-    margin-bottom: 1.2rem;
+    display: flex; align-items: baseline; gap: 0.8rem;
+    border-bottom: 1px solid var(--line); padding-bottom: 0.55rem;
+    margin-bottom: 1.25rem;
   }
   .sect-label .no {
-    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.18em;
-    color: var(--accent);
+    font-family: var(--display); font-size: 0.75rem; letter-spacing: 0.2em;
+    color: var(--gold);
   }
   .sect-label .name {
-    font-family: var(--display); font-weight: 600; text-transform: uppercase;
-    font-size: 1.2rem; letter-spacing: 0.05em;
+    font-family: var(--display); font-weight: 400; font-size: 1.12rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
   }
 
-  .row { display: grid; gap: 1.1rem; margin-top: 1.1rem; }
+  .row { display: grid; gap: 1.15rem; margin-top: 1.15rem; }
   .row:first-of-type { margin-top: 0; }
   @media (min-width: 720px) { .row.two { grid-template-columns: 1fr 1fr; } }
 
-  .fld { display: flex; flex-direction: column; gap: 0.4rem; }
+  .fld { display: flex; flex-direction: column; gap: 0.45rem; }
   .fld label {
-    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--ink-soft);
+    font-size: 0.64rem; font-weight: 500; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--bronze);
   }
-  .fld label b { color: var(--accent); font-weight: 500; }
+  .fld label b { color: var(--gold); font-weight: 500; }
 
   input[type="text"], input[type="email"], input[type="tel"], select, textarea {
-    width: 100%; border: 1.5px solid var(--line); background: #fff;
-    border-radius: 0; padding: 0.8rem 0.9rem; font-family: var(--body);
-    font-size: 1rem; color: var(--ink); transition: border-color 0.15s;
+    width: 100%; border: 1px solid var(--line); background: var(--field);
+    border-radius: 7px; padding: 0.82rem 0.95rem; font-family: var(--body);
+    font-weight: 300; font-size: 1rem; color: var(--text);
+    transition: border-color 0.15s, background 0.15s;
     appearance: none; -webkit-appearance: none;
   }
   textarea { resize: vertical; min-height: 7rem; }
-  input:hover, select:hover, textarea:hover { border-color: var(--ink-soft); }
+  input:hover, select:hover, textarea:hover { border-color: rgba(198, 161, 91, 0.45); }
   input:focus, select:focus, textarea:focus {
-    border-color: var(--accent); outline: none;
+    border-color: var(--gold); outline: none; background: #0D131F;
   }
-  ::placeholder { color: rgba(23, 20, 16, 0.35); }
+  ::placeholder { color: rgba(174, 156, 124, 0.5); }
 
   .selwrap { position: relative; }
   .selwrap::after {
-    content: ""; position: absolute; right: 0.95rem; top: 50%;
-    width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--ink);
-    border-bottom: 2px solid var(--ink);
+    content: ""; position: absolute; right: 1rem; top: 50%;
+    width: 0.5rem; height: 0.5rem; border-right: 1.5px solid var(--gold);
+    border-bottom: 1.5px solid var(--gold);
     transform: translateY(-70%) rotate(45deg); pointer-events: none;
   }
   select { padding-right: 2.4rem; }
+  select option { background: var(--field); color: var(--text); }
 
-  .fld.err input, .fld.err select, .fld.err textarea { border-color: var(--accent); }
-  .fld .msg {
-    display: none; font-size: 0.78rem; color: var(--accent); font-weight: 500;
-  }
+  .fld.err input, .fld.err select, .fld.err textarea { border-color: var(--err); }
+  .fld .msg { display: none; font-size: 0.8rem; color: var(--err); }
   .fld.err .msg { display: block; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .chip {
-    font-family: var(--body); font-size: 0.85rem; font-weight: 500;
-    border: 1.5px solid var(--line); background: #fff; color: var(--ink-soft);
-    padding: 0.55rem 0.95rem; border-radius: 999px; cursor: pointer;
+    font-family: var(--body); font-size: 0.85rem; font-weight: 400;
+    border: 1px solid var(--line); background: transparent; color: var(--bronze);
+    padding: 0.55rem 1rem; border-radius: 999px; cursor: pointer;
     transition: all 0.15s;
   }
-  .chip:hover { border-color: var(--ink); color: var(--ink); }
+  .chip:hover { border-color: var(--gold); color: var(--text); }
   .chip[aria-pressed="true"] {
-    border-color: var(--accent); background: var(--accent-dim);
-    color: var(--ink);
+    border-color: var(--gold); background: var(--gold-dim); color: var(--text);
   }
   .chip[aria-pressed="true"]::before {
-    content: "✓ "; color: var(--accent); font-weight: 600;
+    content: "✓ "; color: var(--gold); font-weight: 500;
   }
 
-  .hint { font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.45rem; }
-
   .form-alert {
-    display: none; margin-top: 1.4rem; border: 1.5px solid var(--accent);
-    background: var(--accent-dim); padding: 0.85rem 1rem; font-size: 0.9rem;
+    display: none; margin-top: 1.4rem; border: 1px solid var(--err);
+    border-radius: 7px; background: rgba(222, 150, 115, 0.08);
+    padding: 0.85rem 1rem; font-size: 0.92rem;
   }
   .form-alert.on { display: block; }
 
   .actions {
-    margin-top: 1.8rem; display: flex; flex-wrap: wrap; align-items: center;
-    gap: 1.1rem;
+    margin-top: 1.9rem; display: flex; flex-wrap: wrap; align-items: center;
+    gap: 1.2rem;
   }
   .btn {
-    font-family: var(--display); font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.09em; font-size: 1.15rem; border: 2px solid var(--ink);
-    background: var(--accent); color: #fff; padding: 0.85rem 2.2rem;
-    cursor: pointer; box-shadow: 4px 4px 0 var(--ink);
-    transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+    font-family: var(--body); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.2em; font-size: 0.82rem; border: 1px solid var(--gold);
+    border-radius: 3px; background: var(--gold); color: var(--ground);
+    padding: 0.95rem 2.4rem; cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 10px 26px -12px rgba(198, 161, 91, 0.55);
   }
-  .btn:hover { background: var(--accent-hot); }
-  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:hover { background: var(--gold-hot); border-color: var(--gold-hot); }
+  .btn:active { transform: translateY(1px); }
   .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  .fine { font-size: 0.78rem; color: var(--ink-soft); max-width: 18rem; }
+  .fine { font-size: 0.78rem; color: var(--bronze); max-width: 18rem; }
 
   /* Honeypot — off-canvas, invisible to people. */
   .hp { position: absolute; left: -9999px; top: 0; }
 
   /* ── Done / copy states ─────────────────────────────────────────── */
-  .done { display: none; padding: 3.5rem 1.4rem; text-align: center; }
+  .done { display: none; padding: 3.6rem 1.4rem; text-align: center; }
   .done.on { display: block; }
   .done .mark {
     width: 4.5rem; height: 4.5rem; margin: 0 auto; border-radius: 50%;
-    background: var(--accent); color: #fff; display: flex;
-    align-items: center; justify-content: center; font-size: 2rem;
-    font-weight: 600; box-shadow: 4px 4px 0 var(--ink);
+    background: var(--gold); color: var(--ground); display: flex;
+    align-items: center; justify-content: center; font-size: 1.9rem;
+    font-weight: 500; box-shadow: 0 14px 34px -14px rgba(198, 161, 91, 0.7);
   }
   .done h2 {
-    font-family: var(--display); font-weight: 700; text-transform: uppercase;
-    font-size: 2.4rem; letter-spacing: 0.03em; margin-top: 1.4rem;
+    font-family: var(--display); font-weight: 400; font-size: 2.1rem;
+    letter-spacing: 0.06em; margin-top: 1.5rem;
   }
-  .done p { max-width: 26rem; margin: 0.8rem auto 0; color: var(--ink-soft); font-size: 0.95rem; }
+  .done p { max-width: 27rem; margin: 0.8rem auto 0; color: var(--bronze); font-size: 0.96rem; }
 
   .copybox {
-    text-align: left; max-width: 34rem; margin: 1.6rem auto 0;
-    border: 1.5px solid var(--line); background: #fff; padding: 1rem 1.1rem;
-    font-family: var(--mono); font-size: 0.74rem; line-height: 1.7;
+    text-align: left; max-width: 34rem; margin: 1.7rem auto 0;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--field);
+    padding: 1.05rem 1.15rem; font-family: ui-monospace, monospace;
+    font-size: 0.74rem; line-height: 1.7; color: var(--text);
     white-space: pre-wrap; word-break: break-word; max-height: 18rem; overflow: auto;
   }
-  .done .btn { margin-top: 1.4rem; }
+  .done .btn { margin-top: 1.5rem; }
   .again {
-    display: inline-block; margin-top: 1.6rem; font-family: var(--mono);
-    font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--ink-soft); background: none; border: 0; cursor: pointer;
+    display: inline-block; margin-top: 1.6rem; font-size: 0.66rem;
+    font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--bronze); background: none; border: 0; cursor: pointer;
     text-decoration: underline; text-underline-offset: 4px;
   }
-  .again:hover { color: var(--ink); }
+  .again:hover { color: var(--gold); }
 
   /* ── Footer ─────────────────────────────────────────────────────── */
-  footer {
-    border-top: 2px solid var(--ink); padding: 1.5rem 0 2.5rem;
-  }
+  footer { border-top: 1px solid var(--line); padding: 1.6rem 0 2.6rem; }
   footer .wrap {
     display: flex; flex-wrap: wrap; gap: 0.5rem 2rem;
     justify-content: space-between; align-items: center;
   }
   footer p, footer a {
-    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--ink-soft);
+    font-size: 0.64rem; font-weight: 400; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--bronze); text-decoration: none;
   }
-  footer a { text-decoration: none; }
-  footer a:hover { color: var(--accent); }
+  footer a:hover { color: var(--gold); }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -342,14 +351,47 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
 </style>
 </head>
 <body>
-<div class="grid-bg" aria-hidden="true"></div>
+
+<!-- Faded construction line-art: crane, framed structure, low-rise. -->
+<div class="scene" aria-hidden="true">
+  <svg viewBox="0 0 1500 520" fill="none" stroke="#AE9C7C" stroke-width="1.5">
+    <!-- framed building, left -->
+    <g opacity="0.9">
+      <path d="M120 520V220h250v300"/>
+      <path d="M120 280h250M120 340h250M120 400h250M120 460h250"/>
+      <path d="M182 220v300M245 220v300M308 220v300"/>
+      <path d="M120 220 245 150l125 70"/>
+      <path d="M162 244v-46M328 244v-46"/>
+    </g>
+    <!-- tower crane, right -->
+    <g opacity="0.9">
+      <path d="M1150 520V110M1186 520V110"/>
+      <path d="M1150 470h36M1150 420h36M1150 370h36M1150 320h36M1150 270h36M1150 220h36M1150 170h36"/>
+      <path d="M1150 470l36-50M1150 420l36-50M1150 370l36-50M1150 320l36-50M1150 270l36-50M1150 220l36-50"/>
+      <path d="M1040 110h420M1168 60l-128 50M1168 60l292 50M1168 60v50"/>
+      <path d="M1330 110v70M1318 180h24M1322 196h16"/>
+      <path d="M1064 110v34h36v-34"/>
+    </g>
+    <!-- low-rise silhouette, center -->
+    <g opacity="0.7">
+      <path d="M560 520V330h180v190M560 380h180M560 430h180M560 480h180M620 330v190M680 330v190"/>
+      <path d="M820 520V390h120v130M820 435h120M820 480h120M880 390v130"/>
+      <path d="M740 520V300l60-40 60 40v220"/>
+    </g>
+    <!-- ground line -->
+    <path d="M0 520h1500" opacity="0.8"/>
+  </svg>
+</div>
 
 <header>
   <div class="wrap masthead">
     <a class="brand" href="https://monarchdevelopmentdfw.com/">
-      <svg width="40" height="34" viewBox="0 0 40 34" aria-hidden="true">
-        <path d="M4 24 10 6l10 9L30 6l6 18z" fill="#C05207"/>
-        <rect x="4" y="27" width="32" height="4" fill="#171410"/>
+      <svg width="42" height="36" viewBox="0 0 42 36" aria-hidden="true">
+        <path d="M5 24 10 7l11 10L32 7l5 17z" fill="none" stroke="#C6A15B" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M5 28h32M5 32h32" stroke="#C6A15B" stroke-width="2"/>
+        <circle cx="10" cy="5" r="2" fill="#C6A15B"/>
+        <circle cx="21" cy="15" r="2" fill="#C6A15B"/>
+        <circle cx="32" cy="5" r="2" fill="#C6A15B"/>
       </svg>
       <span>
         <span class="brand-name">Monarch</span>
@@ -373,25 +415,25 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
       the people who assign jobs across Dallas–Fort Worth.
     </p>
     <div class="dim" aria-hidden="true">
-      <span class="tick"></span><span class="rail"></span>
-      <span class="len" data-t="dim">± 5 min</span>
       <span class="rail"></span><span class="tick"></span>
+      <span class="len" data-t="dim">± 5 min</span>
+      <span class="tick"></span><span class="rail"></span>
     </div>
   </section>
 
   <section class="steps" aria-label="How it works">
     <div class="step">
-      <p class="step-no">01</p>
+      <p class="step-no">I</p>
       <h3 data-t="s1t">Send the form</h3>
       <p data-t="s1p">Skip anything that doesn't apply. Questions welcome too.</p>
     </div>
     <div class="step">
-      <p class="step-no">02</p>
+      <p class="step-no">II</p>
       <h3 data-t="s2t">You go on file</h3>
       <p data-t="s2p">We match trade, area, rates and availability to upcoming jobs.</p>
     </div>
     <div class="step">
-      <p class="step-no">03</p>
+      <p class="step-no">III</p>
       <h3 data-t="s3t">We call you</h3>
       <p data-t="s3p">When the right job comes up, you hear from us directly.</p>
     </div>
@@ -411,7 +453,7 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
       </div>
 
       <div class="sect">
-        <div class="sect-label"><span class="no">01 /</span><span class="name" data-t="sec1">Who you are</span></div>
+        <div class="sect-label"><span class="no">I.</span><span class="name" data-t="sec1">Who you are</span></div>
         <div class="row two">
           <div class="fld" id="f-name">
             <label for="name"><span data-t="lName">Your name</span> <b>*</b></label>
@@ -438,7 +480,7 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
       </div>
 
       <div class="sect">
-        <div class="sect-label"><span class="no">02 /</span><span class="name" data-t="sec2">Your trade</span></div>
+        <div class="sect-label"><span class="no">II.</span><span class="name" data-t="sec2">Your trade</span></div>
         <div class="row two">
           <div class="fld" id="f-trade">
             <label for="trade"><span data-t="lTrade">Trade</span> <b>*</b></label>
@@ -465,7 +507,7 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
       </div>
 
       <div class="sect">
-        <div class="sect-label"><span class="no">03 /</span><span class="name" data-t="sec3">The paperwork</span></div>
+        <div class="sect-label"><span class="no">III.</span><span class="name" data-t="sec3">The paperwork</span></div>
         <div class="fld">
           <label id="credsLabel" data-t="lCreds">Check everything you have — be straight with us, none of these are automatic no's</label>
           <div class="chips" id="creds" role="group" aria-labelledby="credsLabel"></div>
@@ -473,7 +515,7 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
       </div>
 
       <div class="sect">
-        <div class="sect-label"><span class="no">04 /</span><span class="name" data-t="sec4">Rates &amp; availability</span></div>
+        <div class="sect-label"><span class="no">IV.</span><span class="name" data-t="sec4">Rates &amp; availability</span></div>
         <div class="row two">
           <div class="fld">
             <label for="rate" data-t="lRate">Typical rate</label>
@@ -487,7 +529,7 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
       </div>
 
       <div class="sect">
-        <div class="sect-label"><span class="no">05 /</span><span class="name" data-t="sec5">Your work</span></div>
+        <div class="sect-label"><span class="no">V.</span><span class="name" data-t="sec5">Your work</span></div>
         <div class="fld" id="f-about">
           <label for="about"><span data-t="lAbout">Tell us about your work</span> <b>*</b></label>
           <textarea id="about" name="about" data-t-ph="phAbout" placeholder="The kind of jobs you take, builders or GCs you've worked with, a couple of projects you're proud of, references if you have them."></textarea>

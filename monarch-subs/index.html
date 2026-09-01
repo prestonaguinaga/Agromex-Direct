@@ -25,7 +25,7 @@
                   back to whoever shared the link.
    ═══════════════════════════════════════════════════════════════════════ */
 const FORM_ENDPOINT = "";
-const CONTACT_EMAIL = "";
+const CONTACT_EMAIL = "prestonaguinaga2@gmail.com";
 const COMPANY_NAME  = "Monarch Construction";
 const COMPANY_AREA  = "Dallas–Fort Worth";
 </script>
@@ -562,8 +562,8 @@ const COMPANY_AREA  = "Dallas–Fort Worth";
     <!-- No endpoint + no email configured: hand them their application to send back. -->
     <div class="done" id="doneCopy">
       <div class="mark">✓</div>
-      <h2 data-t="copyT">Application ready.</h2>
-      <p data-t="copyP">One last step: copy your application below and send it back to whoever shared this link with you — text or email both work.</p>
+      <h2 id="copyHead">Application ready.</h2>
+      <p id="copyPara">One last step: copy your application below and send it back to whoever shared this link with you — text or email both work.</p>
       <div class="copybox" id="copyText"></div>
       <button type="button" class="btn" id="copyBtn" data-t="btnCopy">Copy application</button>
       <br>
@@ -617,6 +617,8 @@ const T = {
     again: "Send another",
     copyT: "Application ready.",
     copyP: "One last step: copy your application below and send it back to whoever shared this link with you — text or email both work.",
+    mailT: "Almost done — hit Send.",
+    mailP: "Your email app just opened with your application written and addressed to {email}. Press Send there and you're on file. If it didn't open, copy your application below and email it to {email}.",
     btnCopy: "Copy application", btnCopied: "Copied ✓", again2: "Start over",
     footArea: "Dallas–Fort Worth",
     brandSub: "Construction · DFW",
@@ -664,6 +666,8 @@ const T = {
     again: "Enviar otra",
     copyT: "Solicitud lista.",
     copyP: "Último paso: copia tu solicitud aquí abajo y mándasela a la persona que te compartió este enlace — por mensaje o correo.",
+    mailT: "Casi listo — dale Enviar.",
+    mailP: "Tu aplicación de correo se abrió con tu solicitud ya escrita y dirigida a {email}. Dale Enviar ahí y quedas registrado. Si no se abrió, copia tu solicitud aquí abajo y mándala a {email}.",
     btnCopy: "Copiar solicitud", btnCopied: "Copiado ✓", again2: "Empezar de nuevo",
     footArea: "Dallas–Fort Worth",
     brandSub: "Construcción · DFW",
@@ -681,6 +685,20 @@ const T = {
 let lang = "en";
 const $ = (id) => document.getElementById(id);
 const t = () => T[lang];
+
+/* The doneCopy screen has two flavors: "mail" (an email app was opened,
+   pre-addressed to CONTACT_EMAIL) and "copy" (nothing configured — the
+   applicant sends the text back themselves). Re-rendered on language switch. */
+let doneMode = "copy";
+function renderDoneCopy() {
+  if (doneMode === "mail") {
+    $("copyHead").textContent = t().mailT;
+    $("copyPara").textContent = t().mailP.split("{email}").join(CONTACT_EMAIL);
+  } else {
+    $("copyHead").textContent = t().copyT;
+    $("copyPara").textContent = t().copyP;
+  }
+}
 
 /* ── chips ── */
 const picked = { creds: new Set(), avail: 0 };
@@ -741,6 +759,7 @@ function applyLang() {
   renderSelect("years", t().years, false);
   renderSelect("crew", t().crew, false);
   renderChips();
+  renderDoneCopy();
   $("langEn").setAttribute("aria-pressed", lang === "en" ? "true" : "false");
   $("langEs").setAttribute("aria-pressed", lang === "es" ? "true" : "false");
 }
@@ -843,14 +862,21 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (CONTACT_EMAIL) {
+    // Open their email app pre-addressed and pre-written; keep the copy
+    // screen behind it in case no email app is set up on their device.
+    $("copyText").textContent = `${subject}\n\n${asText(app)}`;
+    doneMode = "mail";
+    renderDoneCopy();
+    showDone("doneCopy");
     window.location.href =
       `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(asText(app))}`;
-    showDone("doneSent");
     return;
   }
 
   // Nothing configured: give them the finished application to send back.
   $("copyText").textContent = `${subject}\n\n${asText(app)}`;
+  doneMode = "copy";
+  renderDoneCopy();
   showDone("doneCopy");
 });
 

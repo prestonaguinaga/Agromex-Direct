@@ -12,19 +12,19 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
-   MONARCH — EDIT THESE FOUR LINES AND NOTHING ELSE
+   MONARCH — EDIT THESE LINES AND NOTHING ELSE
    ═══════════════════════════════════════════════════════════════════════
-   FORM_ENDPOINT  Where applications are sent. Make a free form at
-                  formspree.io and paste its URL here, e.g.
-                  "https://formspree.io/f/xxxxxxxx". Applications then
-                  arrive by email automatically.
-   CONTACT_EMAIL  Fallback if no endpoint is set: submitting opens the
-                  applicant's email app pre-addressed to this address.
-                  If BOTH are empty, the form still works — it gives the
-                  applicant their finished application to copy and send
-                  back to whoever shared the link.
+   FORM_KEY       Web3Forms access key. Submissions are emailed
+                  automatically to the inbox that created the key.
+                  Set to "" to turn automatic sending off.
+   CONTACT_EMAIL  Backup delivery: used if the automatic send fails or
+                  FORM_KEY is empty — submitting opens the applicant's
+                  email app pre-addressed to this address. If BOTH are
+                  empty the form still works: it gives the applicant
+                  their finished application to copy and send back.
    ═══════════════════════════════════════════════════════════════════════ */
-const FORM_ENDPOINT = "";
+const FORM_ENDPOINT = "https://api.web3forms.com/submit";
+const FORM_KEY      = "ebed6f3b-d6cd-4e85-85b2-1ac432993a44";
 const CONTACT_EMAIL = "prestonaguinaga2@gmail.com";
 const COMPANY_NAME  = "Monarch Construction";
 const COMPANY_AREA  = "Dallas–Fort Worth";
@@ -838,7 +838,18 @@ form.addEventListener("submit", async (event) => {
   const app = gather();
   const subject = `${t().subject} — ${$("name").value.trim()}`;
 
-  if (FORM_ENDPOINT) {
+  // Backup delivery: open their email app pre-addressed and pre-written,
+  // keeping the copy screen behind it in case no email app is set up.
+  const deliverByMail = () => {
+    $("copyText").textContent = `${subject}\n\n${asText(app)}`;
+    doneMode = "mail";
+    renderDoneCopy();
+    showDone("doneCopy");
+    window.location.href =
+      `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(asText(app))}`;
+  };
+
+  if (FORM_ENDPOINT && FORM_KEY) {
     sending = true;
     $("sendBtn").disabled = true;
     $("sendBtn").textContent = t().btnSending;
@@ -846,13 +857,26 @@ form.addEventListener("submit", async (event) => {
       const res = await fetch(FORM_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ ...app, _subject: subject, language: lang }),
+        body: JSON.stringify({
+          access_key: FORM_KEY,
+          subject,
+          from_name: $("name").value.trim(),
+          // Plain lowercase `email` lets Web3Forms set Reply-To to the
+          // applicant; the localized field keys in `app` don't collide.
+          email: $("email").value.trim(),
+          language: lang,
+          ...app,
+        }),
       });
       if (!res.ok) throw new Error("send failed");
       showDone("doneSent");
     } catch {
-      $("formAlert").textContent = t().alertSend;
-      $("formAlert").classList.add("on");
+      if (CONTACT_EMAIL) {
+        deliverByMail();
+      } else {
+        $("formAlert").textContent = t().alertSend;
+        $("formAlert").classList.add("on");
+      }
     } finally {
       sending = false;
       $("sendBtn").disabled = false;
@@ -862,14 +886,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (CONTACT_EMAIL) {
-    // Open their email app pre-addressed and pre-written; keep the copy
-    // screen behind it in case no email app is set up on their device.
-    $("copyText").textContent = `${subject}\n\n${asText(app)}`;
-    doneMode = "mail";
-    renderDoneCopy();
-    showDone("doneCopy");
-    window.location.href =
-      `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(asText(app))}`;
+    deliverByMail();
     return;
   }
 

@@ -146,6 +146,12 @@ export interface UploadInput {
   clientId?: string;
   /** Pre-chosen id so a retried upload lands on the same row and object. */
   id?: string;
+  /** Construction phase / category the photo belongs to. */
+  phaseId?: string | null;
+  /** Related task or checklist item. */
+  taskId?: string | null;
+  /** Override the EXIF / file date (e.g. when re-uploading old photos). */
+  takenAt?: string | null;
 }
 
 /**
@@ -174,7 +180,11 @@ export async function uploadProjectFile(input: UploadInput): Promise<FileRow> {
     if (t.error) thumbPath = null; // a missing thumbnail is cosmetic
   }
 
-  const takenAt = isImage ? ((await readExifDate(input.file)) ?? new Date(input.file.lastModified)) : null;
+  const takenAt = input.takenAt
+    ? new Date(input.takenAt)
+    : isImage
+      ? ((await readExifDate(input.file)) ?? new Date(input.file.lastModified))
+      : null;
   const row = {
     id,
     company_id: input.companyId,
@@ -191,6 +201,8 @@ export async function uploadProjectFile(input: UploadInput): Promise<FileRow> {
     taken_at: takenAt ? takenAt.toISOString() : null,
     caption: input.caption ?? "",
     uploaded_by: input.userId,
+    phase_id: input.phaseId ?? null,
+    task_id: input.taskId ?? null,
     client_id: input.clientId ?? null,
   };
   const { data, error } = await sb.from("files").upsert(row, { onConflict: "id" }).select("*").single();
@@ -199,7 +211,14 @@ export async function uploadProjectFile(input: UploadInput): Promise<FileRow> {
 }
 
 export async function updateFileCaption(id: string, caption: string): Promise<void> {
-  const { error } = await supabase().from("files").update({ caption }).eq("id", id);
+  return updateFile(id, { caption });
+}
+
+export async function updateFile(
+  id: string,
+  patch: Partial<Pick<FileRow, "caption" | "phase_id" | "task_id" | "kind" | "taken_at">>,
+): Promise<void> {
+  const { error } = await supabase().from("files").update(patch).eq("id", id);
   if (error) throw error;
 }
 

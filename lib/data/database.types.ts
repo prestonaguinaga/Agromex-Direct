@@ -83,12 +83,77 @@ export type ProjectRow = {
   target_end_date: string | null;
   actual_end_date: string | null;
   progress_pct: number;
+  manager_id: string | null;
+  manual_progress_pct: number | null;
+  manual_progress_by: string | null;
+  manual_progress_at: string | null;
+  manual_progress_note: string;
   client_id: string | null;
   created_at: string;
   created_by: string | null;
   updated_at: string;
   updated_by: string | null;
   deleted_at: string | null;
+}
+
+export type PhaseStatus = "not_started" | "in_progress" | "complete" | "blocked";
+
+export type ProjectPhaseRow = {
+  id: string;
+  company_id: string;
+  project_id: string;
+  key: string | null;
+  name: string;
+  status: PhaseStatus;
+  position: number;
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  weight: number;
+  notes: string;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type SubcontractorRow = {
+  id: string;
+  company_id: string;
+  name: string;
+  trade: string;
+  contact_name: string;
+  phone: string;
+  email: string;
+  notes: string;
+  status: "active" | "inactive";
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type ChecklistTemplateRow = {
+  id: string;
+  company_id: string;
+  key: string | null;
+  name: string;
+  phase_key: string | null;
+  position: number;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type ChecklistTemplateItemRow = {
+  id: string;
+  company_id: string;
+  template_id: string;
+  title: string;
+  trade: string;
+  position: number;
 }
 
 export type ProjectMemberRow = {
@@ -174,6 +239,7 @@ export type BudgetRow = {
   name: string;
   status: "active" | "archived";
   notes: string;
+  contract_amount: number | null;
   created_at: string;
   created_by: string | null;
   updated_at: string;
@@ -204,6 +270,8 @@ export type TaskListRow = {
   project_id: string;
   name: string;
   kind: "checklist" | "punch_list" | "inspection" | "custom";
+  phase_id: string | null;
+  template_key: string | null;
   position: number;
   created_at: string;
   created_by: string | null;
@@ -225,6 +293,11 @@ export type TaskRow = {
   completed_at: string | null;
   completed_by: string | null;
   is_milestone: boolean;
+  trade: string;
+  start_date: string | null;
+  notes: string;
+  phase_id: string | null;
+  subcontractor_id: string | null;
   position: number;
   created_at: string;
   created_by: string | null;
@@ -239,6 +312,10 @@ export type NoteRow = {
   author_id: string | null;
   body: string;
   pinned: boolean;
+  task_id: string | null;
+  budget_line_id: string | null;
+  file_id: string | null;
+  phase_id: string | null;
   created_at: string;
   updated_at: string;
   updated_by: string | null;
@@ -262,6 +339,8 @@ export type FileRow = {
   taken_at: string | null;
   caption: string;
   uploaded_by: string | null;
+  phase_id: string | null;
+  task_id: string | null;
   client_id: string | null;
   created_at: string;
   updated_at: string;
@@ -283,6 +362,7 @@ export type AuditLogRow = {
   new_value: Json | null;
   summary: string;
   source: string;
+  kind: "major" | "minor";
   created_at: string;
 }
 
@@ -301,7 +381,14 @@ export type ProjectSummaryRow = {
   start_date: string | null;
   target_end_date: string | null;
   actual_end_date: string | null;
+  manager_id: string | null;
   progress_pct: number;
+  manual_progress_pct: number | null;
+  manual_progress_by: string | null;
+  manual_progress_at: string | null;
+  manual_progress_note: string;
+  display_progress_pct: number;
+  progress_source: "calculated" | "manual";
   created_at: string;
   created_by: string | null;
   updated_at: string;
@@ -319,6 +406,19 @@ export type ProjectSummaryRow = {
   total_items: number;
   tasks_total: number;
   tasks_done: number;
+  tasks_in_progress: number;
+  tasks_blocked: number;
+  tasks_overdue: number;
+  phases_total: number;
+  phases_complete: number;
+  current_phase_id: string | null;
+  current_phase_name: string | null;
+  current_phase_status: PhaseStatus | null;
+  budget_id: string | null;
+  contract_amount: number | null;
+  budget_budgeted: number;
+  budget_committed: number;
+  budget_actual: number;
 }
 
 /** What my_context() returns for the signed-in user. */
@@ -355,6 +455,10 @@ export type Database = {
       notes: Table<NoteRow>;
       files: Table<FileRow>;
       audit_log: Table<AuditLogRow>;
+      project_phases: Table<ProjectPhaseRow>;
+      subcontractors: Table<SubcontractorRow>;
+      checklist_templates: Table<ChecklistTemplateRow>;
+      checklist_template_items: Table<ChecklistTemplateItemRow>;
     };
     Views: {
       project_summary: { Row: ProjectSummaryRow; Relationships: never[] };

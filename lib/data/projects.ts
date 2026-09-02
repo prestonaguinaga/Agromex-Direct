@@ -121,9 +121,20 @@ export async function updateProjectFields(
       | "actual_end_date"
       | "notes"
       | "plan_notes"
+      | "manager_id"
+      | "type"
     >
   >,
 ): Promise<void> {
   const { error } = await supabase().from("projects").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+/** Set (or clear with null) the manager's override; the calculated figure is untouched. */
+export async function setManualProgress(id: string, pct: number | null, note: string): Promise<void> {
+  const { error } = await supabase()
+    .from("projects")
+    .update({ manual_progress_pct: pct, manual_progress_note: pct === null ? "" : note })
+    .eq("id", id);
   if (error) throw error;
 }

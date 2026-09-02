@@ -3,13 +3,15 @@
 import { supabase } from "./client";
 import type { AuditLogRow } from "./database.types";
 
-export async function loadProjectActivity(projectId: string, limit = 200): Promise<AuditLogRow[]> {
-  const { data, error } = await supabase()
+export async function loadProjectActivity(projectId: string, limit = 200, includeMinor = false): Promise<AuditLogRow[]> {
+  let q = supabase()
     .from("audit_log")
     .select("*")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
     .limit(limit);
+  if (!includeMinor) q = q.eq("kind", "major");
+  const { data, error } = await q;
   if (error) throw error;
   return data ?? [];
 }
@@ -49,6 +51,7 @@ export function activityKind(row: AuditLogRow): "budget" | "estimate" | "task" |
     case "invitations":
       return "team";
     case "projects":
+    case "project_phases":
       return "project";
     default:
       return "other";

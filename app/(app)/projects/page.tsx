@@ -172,7 +172,7 @@ export default function ProjectsPage() {
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map((p, i) => {
-              const pct = Number(p.progress_pct) || 0;
+              const pct = Number(p.display_progress_pct ?? p.progress_pct) || 0;
               return (
                 <article
                   key={p.id}
@@ -189,6 +189,12 @@ export default function ProjectsPage() {
                     </div>
                     <h2 className="mt-2 text-lg font-semibold leading-snug group-hover:underline">{p.name}</h2>
                     {p.client_name && <p className="mt-0.5 text-xs text-mute">{p.client_name}</p>}
+                    {(p.current_phase_name || p.tasks_overdue > 0) && (
+                      <p className="microlabel mt-1 !normal-case !tracking-normal">
+                        {p.current_phase_name ? `◐ ${p.current_phase_name}` : ""}
+                        {p.tasks_overdue > 0 ? `${p.current_phase_name ? " · " : ""}${p.tasks_overdue} overdue` : ""}
+                      </p>
+                    )}
                     <div className="tnum mt-5 font-mono text-2xl">
                       {canSeeMoney ? money(Number(p.grand)) : `${pct.toFixed(0)}%`}
                     </div>
@@ -196,8 +202,9 @@ export default function ProjectsPage() {
                       <div className="h-1 flex-1 border">
                         <div className="h-full bg-ink transition-all" style={{ width: `${pct}%` }} />
                       </div>
-                      <span className="microlabel tnum">
-                        {p.done_items + p.tasks_done}/{p.total_items + p.tasks_total}
+                      <span className="microlabel tnum" title={p.progress_source === "manual" ? "manager's figure" : "calculated from checklists"}>
+                        {p.tasks_done}/{p.tasks_total}
+                        {p.progress_source === "manual" ? " · PM" : ""}
                       </span>
                     </div>
                   </Link>

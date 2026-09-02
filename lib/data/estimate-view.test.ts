@@ -98,7 +98,9 @@ test("rowsToProject rebuilds the same view model the diff produced", () => {
       id: p.id, company_id: "c", number: 1, name: p.name, type: "remodel", status: "estimating",
       template: "kitchen", client_name: "J. Smith", client_phone: "", client_email: "", address: "",
       notes: "", plan_notes: "", start_date: null, target_end_date: null, actual_end_date: null,
-      progress_pct: 0, client_id: null, created_at: "1970-01-01T00:00:00.001Z", created_by: null,
+      progress_pct: 0, manager_id: null, manual_progress_pct: null, manual_progress_by: null,
+      manual_progress_at: null, manual_progress_note: "",
+      client_id: null, created_at: "1970-01-01T00:00:00.001Z", created_by: null,
       updated_at: "1970-01-01T00:00:00.001Z", updated_by: null, deleted_at: null,
     },
     estimate: {

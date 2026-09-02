@@ -1,17 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
-import type { PlanFile, Project } from "@/lib/types";
-import { uid } from "@/lib/format";
+import { useState } from "react";
+import type { Project } from "@/lib/types";
 import { NumInput, TextInput } from "./inputs";
 import { Label } from "./ui";
 
 type Update = (fn: (prev: Project) => Project) => void;
 
-/** localStorage is ~5MB total, so plan attachments get a hard budget. */
-const MAX_FILE_BYTES = 2_000_000;
-const MAX_TOTAL_BYTES = 3_500_000;
-
+/**
+ * Job information and the key figures that feed the estimator. Plans and
+ * photos used to be stored here as base64 in the browser; they now live in
+ * Supabase Storage under the project's Files tab, shared with the team.
+ */
 export function InfoPanel({
   project,
   update,
@@ -19,43 +19,8 @@ export function InfoPanel({
   project: Project;
   update: Update;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
-
   const setInfo = (patch: Partial<Project["info"]>) =>
     update((p) => ({ ...p, info: { ...p.info, ...patch } }));
-
-  const usedBytes = project.plans.reduce((a, f) => a + f.dataUrl.length, 0);
-
-  const addFiles = (files: FileList) => {
-    setFileError(null);
-    for (const file of Array.from(files)) {
-      if (file.size > MAX_FILE_BYTES) {
-        setFileError(
-          `"${file.name}" is too big to store in the browser (max ~2MB). Keep big plan sets in a folder and note the location below.`,
-        );
-        continue;
-      }
-      if (usedBytes + file.size * 1.4 > MAX_TOTAL_BYTES) {
-        setFileError(
-          "Attachment space for this project is full — remove a file first.",
-        );
-        break;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const pf: PlanFile = {
-          id: uid(),
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          dataUrl: String(reader.result),
-        };
-        update((p) => ({ ...p, plans: [...p.plans, pf] }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -155,91 +120,20 @@ export function InfoPanel({
         </div>
       </section>
 
-      {/* ── Plans & files ────────────────────────────────────────── */}
+      {/* ── Plans pointer ────────────────────────────────────────── */}
       <section className="panel bg-paper">
-        <div className="bar flex items-center justify-between border-b px-4 py-2.5">
+        <div className="bar border-b px-4 py-2.5">
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
-            Plans & photos
-          </span>
-          <span className="microlabel tnum">
-            {Math.round(usedBytes / 1024)}KB / {Math.round(MAX_TOTAL_BYTES / 1024)}KB
+            Plans &amp; photos
           </span>
         </div>
         <div className="p-4">
-          <button
-            className="grid w-full cursor-pointer place-items-center border border-dashed border-ink/40 px-4 py-8 text-center transition-colors hover:border-ink hover:bg-paper-2"
-            onClick={() => fileRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
-            }}
-          >
-            <span className="microlabel">
-              Drop plan pages / sketches / photos here
-            </span>
-            <span className="mt-1 text-xs text-mute">
-              PNG · JPG · PDF — stored right in your browser (≤2MB each)
-            </span>
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.length) addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
-          {fileError && (
-            <p className="mt-2 border border-ink bg-paper-2 px-3 py-2 text-xs">
-              ⚠ {fileError}
-            </p>
-          )}
-
-          {project.plans.length > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {project.plans.map((f) => (
-                <figure key={f.id} className="group relative border">
-                  {f.type.startsWith("image/") ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={f.dataUrl}
-                      alt={f.name}
-                      className="aspect-square w-full object-cover"
-                    />
-                  ) : (
-                    <a
-                      href={f.dataUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="grid aspect-square w-full place-items-center font-mono text-xs underline"
-                    >
-                      PDF ↗
-                    </a>
-                  )}
-                  <figcaption className="truncate border-t px-1.5 py-1 font-mono text-[0.625rem]">
-                    {f.name}
-                  </figcaption>
-                  <button
-                    className="absolute right-1 top-1 hidden border border-ink bg-paper px-1.5 py-0.5 font-mono text-xs group-hover:block"
-                    onClick={() =>
-                      update((p) => ({
-                        ...p,
-                        plans: p.plans.filter((x) => x.id !== f.id),
-                      }))
-                    }
-                  >
-                    ✕
-                  </button>
-                </figure>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-3">
+          <p className="text-sm leading-relaxed text-mute">
+            Plan sets, drawings, documents and progress photos are on the project&apos;s{" "}
+            <span className="text-ink">Plans · files · photos</span> tab. They are stored in the company&apos;s
+            shared file storage, so anything uploaded from a phone on site is on every device at once.
+          </p>
+          <div className="mt-4">
             <Label>Plan notes / where the full set lives</Label>
             <NotesArea
               value={project.planNotes}

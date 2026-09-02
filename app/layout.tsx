@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Michroma, Archivo, Spline_Sans_Mono } from "next/font/google";
+import { appConfig } from "@/app.config";
 import "./globals.css";
 
 const michroma = Michroma({
@@ -23,11 +24,11 @@ const splineMono = Spline_Sans_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AGROMEX — Construction Quote Sheet",
-    template: "%s — AGROMEX",
+    default: appConfig.appName,
+    template: `%s — ${appConfig.appName}`,
   },
   description:
-    "Quote construction projects fast: itemized material sheets with product links, price options, takeoff estimators and printable quotes. Everything saves in your browser.",
+    `${appConfig.company.name} — projects, estimates, budgets, checklists, notes and progress photos, shared by the whole team.`,
   robots: { index: false, follow: false },
 };
 

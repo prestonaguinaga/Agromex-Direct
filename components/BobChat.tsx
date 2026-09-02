@@ -42,8 +42,8 @@ declare global {
   }
 }
 
-const CONFIG_KEY = "agromex.bob.v1";
-const chatKey = (projectId: string) => `agromex.bob.chat.${projectId}`;
+const CONFIG_KEY = "monarch.bob.v1";
+const chatKey = (projectId: string) => `monarch.bob.chat.${projectId}`;
 const MAX_STORED = 60;
 
 function loadConfig(): BobConfig | null {

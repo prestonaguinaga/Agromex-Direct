@@ -1,14 +1,11 @@
 import type { Project, Totals } from "./types";
 
-let counter = 0;
-/** Collision-safe enough for a single browser: time + counter + entropy. */
+/**
+ * Ids are real UUIDs so a row created in the browser can be upserted to the
+ * database as-is — a retried save lands on the same row instead of a duplicate.
+ */
 export function uid(): string {
-  counter = (counter + 1) % 1000;
-  return (
-    Date.now().toString(36) +
-    counter.toString(36) +
-    Math.random().toString(36).slice(2, 7)
-  );
+  return crypto.randomUUID();
 }
 
 const usd = new Intl.NumberFormat("en-US", {

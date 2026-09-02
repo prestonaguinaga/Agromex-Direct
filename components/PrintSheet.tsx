@@ -1,4 +1,5 @@
 import type { Project, Totals } from "@/lib/types";
+import { appConfig } from "@/app.config";
 import { activePrice, lineTotal, money, num } from "@/lib/format";
 
 /**
@@ -42,8 +43,8 @@ export function PrintSheet({
       <div className="mb-5 border-2 border-ink">
         <div className="flex items-stretch justify-between border-b-2 border-ink">
           <div className="p-3">
-            <p className="font-display text-lg">AGROMEX</p>
-            <p className="microlabel">Construction quote sheet</p>
+            <p className="font-display text-lg">{appConfig.company.wordmark}</p>
+            <p className="microlabel">{appConfig.company.name} · Construction quote sheet</p>
           </div>
           <div className="grid grid-cols-2 text-right">
             <div className="border-l border-ink p-3">
@@ -254,7 +255,7 @@ export function PrintSheet({
       )}
 
       <p className="microlabel mt-6 text-center">
-        Generated with the Agromex quote sheet · {today}
+        Generated with {appConfig.appName} · {today}
       </p>
     </div>
   );

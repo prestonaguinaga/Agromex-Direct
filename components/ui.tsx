@@ -97,6 +97,11 @@ function UserChip() {
           <Link href="/team" className="block px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-mute hover:bg-ink hover:text-paper" onClick={() => setOpen(false)}>
             Team &amp; profile
           </Link>
+          {session.can("settings.manage") && (
+            <Link href="/settings" className="block px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-mute hover:bg-ink hover:text-paper" onClick={() => setOpen(false)}>
+              Settings
+            </Link>
+          )}
           <button className="block w-full px-3 py-2 text-left font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-mute hover:bg-ink hover:text-paper" onClick={signOut}>
             Sign out
           </button>
@@ -106,7 +111,7 @@ function UserChip() {
   );
 }
 
-export type TopBarTab = "projects" | "subcontractors" | "team" | "guide" | "bob" | "none";
+export type TopBarTab = "projects" | "subcontractors" | "briefs" | "team" | "guide" | "bob" | "none";
 
 export function TopBar({ active, sheet }: { active: TopBarTab; sheet?: string }) {
   const session = useSessionOptional();
@@ -132,6 +137,7 @@ export function TopBar({ active, sheet }: { active: TopBarTab; sheet?: string })
         <nav className="flex items-center gap-1">
           {tab("/projects", "Projects", active === "projects")}
           {session?.can("subcontractors.view") && tab("/subcontractors", "Subs", active === "subcontractors")}
+          {session?.can("briefs.view") && tab("/briefs", "Briefs", active === "briefs")}
           {session?.can("team.view") && tab("/team", "Team", active === "team")}
           {tab("/guide", "Cost guide", active === "guide")}
           {session?.can("bob.use") && tab("/bob", "🔨 Bob", active === "bob")}

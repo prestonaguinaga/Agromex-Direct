@@ -437,6 +437,61 @@ select test.expect_error(
 select test.as_user(test.u('A'));
 update public.role_permissions set allowed = true where company_id = test.u('CID') and role = 'employee' and capability = 'bob.use';
 
+-- ── Daily brief: settings need settings.manage, briefs are read by briefs.view only ──
+select test.as_user(test.u('A'));
+do $$ begin
+  assert (public.my_context()->'capabilities') ? 'briefs.view', 'owner has briefs.view';
+  insert into public.daily_brief_settings (company_id, enabled, delivery_time, timezone, recipients)
+    values (test.u('CID'), true, '06:30', 'America/Chicago', array['owner@example.com']);
+  update public.daily_brief_settings set delivery_time = '07:15' where company_id = test.u('CID');
+  assert exists (select 1 from public.audit_log where entity_type = 'daily_brief_settings' and field = 'delivery_time'), 'settings change audited';
+  insert into public.leads (company_id, name, email, message, source) values (test.u('CID'), 'Pat Lead', 'pat@example.com', 'Need a kitchen remodel', 'website');
+  insert into public.subcontractor_applications (company_id, company_name, contact_name, trade, source)
+    values (test.u('CID'), 'Ace Drywall', 'Ana', 'Drywall', 'website');
+  update public.subcontractor_applications set status = 'accepted' where company_name = 'Ace Drywall';
+  assert (select reviewed_by from public.subcontractor_applications where company_name = 'Ace Drywall') = test.u('A'), 'review stamped';
+end $$;
+
+-- The server process (service role) writes briefs; a retried run cannot create a second one.
+reset role;
+do $$ begin
+  insert into public.daily_briefs (id, company_id, brief_date, kind, timezone, status, summary, attention_count, generated_at)
+    values ('16161616-1616-1616-1616-161616161616', test.u('CID'), '2026-09-02', 'scheduled', 'America/Chicago', 'ready', '2 things to look at', 2, now());
+  insert into public.daily_briefs (company_id, brief_date, kind, timezone)
+    values (test.u('CID'), '2026-09-02', 'scheduled', 'America/Chicago')
+    on conflict (company_id, brief_date, kind) do nothing;
+  assert (select count(*) from public.daily_briefs where company_id = test.u('CID') and brief_date = '2026-09-02' and kind = 'scheduled') = 1, 'one brief per day';
+  insert into public.daily_brief_deliveries (company_id, brief_id, recipient_email, status, sent_at)
+    values (test.u('CID'), '16161616-1616-1616-1616-161616161616', 'owner@example.com', 'sent', now());
+  insert into public.daily_brief_deliveries (company_id, brief_id, recipient_email)
+    values (test.u('CID'), '16161616-1616-1616-1616-161616161616', 'owner@example.com')
+    on conflict (brief_id, recipient_email) do nothing;
+  assert (select count(*) from public.daily_brief_deliveries) = 1, 'one delivery per recipient';
+end $$;
+set role authenticated;
+
+-- A project manager reads briefs and settings but cannot change settings; an employee sees none of it.
+select test.as_user(test.u('B'));
+do $$ begin
+  assert (select count(*) from public.daily_briefs) = 1, 'PM reads briefs';
+  assert (select count(*) from public.daily_brief_settings) = 1, 'PM reads settings';
+  assert (select count(*) from public.leads) = 1, 'PM reads leads';
+  update public.daily_brief_settings set enabled = false where company_id = test.u('CID');
+  assert (select enabled from public.daily_brief_settings where company_id = test.u('CID')), 'PM cannot change settings';
+end $$;
+select test.expect_error(
+  format('insert into public.daily_briefs (company_id, brief_date, timezone) values (%L, ''2026-09-03'', ''UTC'')', test.u('CID')), '42501');
+select test.as_user(test.u('C'));
+do $$ begin
+  assert (select count(*) from public.daily_briefs) = 0, 'employee sees no briefs';
+  assert (select count(*) from public.daily_brief_settings) = 0, 'employee sees no brief settings';
+  assert (select count(*) from public.daily_brief_deliveries) = 0, 'employee sees no deliveries';
+  assert (select count(*) from public.leads) = 0, 'employee sees no leads';
+  assert (select count(*) from public.subcontractor_applications) = 1, 'employee may see applications (subcontractors.view)';
+end $$;
+select test.expect_error(
+  format('insert into public.leads (company_id, name) values (%L, ''Spoof'')', test.u('CID')), '42501');
+
 -- ── Soft delete hides everything downstream ──────────────────────────────────
 select test.as_user(test.u('A'));
 update public.projects set deleted_at = now() where id = test.u('PID');

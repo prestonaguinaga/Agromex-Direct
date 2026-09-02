@@ -3,6 +3,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { PendingActionView } from "../protocol";
 import { createPendingAction } from "./confirm";
 import { activityTools } from "./tools/activity";
+import { briefTools } from "./tools/briefs";
 import { budgetTools } from "./tools/budget";
 import { estimateTools } from "./tools/estimate";
 import { fileTools } from "./tools/files";
@@ -30,6 +31,7 @@ export const ALL_TOOLS: ToolDef[] = [
   ...activityTools,
   ...teamTools,
   ...estimateTools,
+  ...briefTools,
   ...memoryTools,
 ];
 

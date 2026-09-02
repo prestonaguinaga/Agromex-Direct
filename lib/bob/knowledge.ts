@@ -32,7 +32,8 @@ const APP_MAP = `WHAT THE APP IS
 - Projects sheet (/projects): every project the person may see — type, status, current phase, progress, overdue count.
 - Project workspace (/projects/{id}) with tabs: Overview · Budget · Estimate (quote sheet, estimator, job info) · Progress (phases, schedule health, work lists) · Plans & files · Photos · Tasks & checklist · Notes · Activity (the site log of who changed what).
 - Team (/team): members, roles, invitations, profiles. Subcontractors (/subcontractors): the trade directory. Cost guide (/guide): researched cost data. Bob (/bob): this chat, full page.
-- Not built yet: the subcontractor applications inbox, the daily update email, a dashboard (home currently goes to Projects). Say so plainly when asked; never pretend a page or a feature exists.
+- Daily briefs (/briefs): Bob's Daily Brief — a scheduled, server-side summary of every active project (attention items, schedule, budget, progress, photos, leads, applications), kept per day and emailed; get_daily_brief reads the latest or a given day. Settings (/settings): the brief's delivery time, timezone, recipients and sections (settings.manage).
+- Not built yet: public intake forms for leads and subcontractor applications (the tables exist and the brief reports on them), a dashboard beyond the brief card on Projects. Say so plainly when asked; never pretend a page or a feature exists.
 - Navigation destinations you may use with navigate_to: ${destinationList}.`;
 
 const GROUNDING = `HOW YOU WORK

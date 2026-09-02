@@ -1,14 +1,215 @@
 # Monarch Admin — Project Status
 
-**Phase:** 3 · Bob, the site assistant — **complete, builds green**
-(Phase 2 · construction project management — complete; Phase 1 · backend foundation — complete)
+**Phase:** 4 · Bob's Daily Brief — **complete, builds green**
+(Phase 3 · Bob, the site assistant — complete; Phase 2 · construction project management — complete;
+Phase 1 · backend foundation — complete)
 **Branch:** `claude/bob-monarch-admin-assistant-q0hu7d`
-**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§8 of the plan is this phase)
+**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is this phase; §8 was phase 3)
 **Last updated:** 2026-09-02
 
 ---
 
-## 0. Phase 3 — Bob becomes the assistant and navigation layer of Monarch Admin
+## 0. Phase 4 — Bob's Daily Brief (a scheduled, server-side process)
+
+Every morning at the company's delivery time Bob writes a brief for the owner and project
+managers — without anyone's browser being open. A scheduler calls the app on the server; the
+server reads the database with its own (service-role) credentials, works out what happened since
+the previous brief, writes the document, stores it under **Sheet 16 · `/briefs`**, shows the
+newest one on the **Projects dashboard card**, and emails it to the configured recipients. Every
+statement in it is backed by a row in the database and links to the sheet where that row lives.
+
+| Section | What it reports | Where it comes from |
+|---|---|---|
+| **Bob says you should look at** | Objective rules over the facts (below, §0.6): overdue and blocked work, negative variance, over-budget lines, projects gone quiet, urgent items, leads and applications waiting. Each item names the number behind it and links to the sheet. Nothing is invented: no rule, no item | `lib/brief/attention.ts` |
+| **Active projects** | Phase, progress % (with its source), schedule chip, and what changed since the previous brief: budget edits, tasks, notes, photos, files, phases, members — the audit rows, grouped the way the Activity sheet groups them | `project_summary`, `audit_log` |
+| **Schedule** | Due today · due in the next 7 days · overdue · blocked · behind schedule / past target date | `tasks`, `project_summary` |
+| **Budget** *(switch)* | Over-budget lines · significant budget changes in the window (the same rule Bob's activity digest uses) · remaining budget per project · projects with negative variance | `budget_lines`, `budgets`, `audit_log` |
+| **Progress** | Tasks completed · checklist items completed · projects whose progress % moved since the previous brief · notes written | `tasks`, `notes` |
+| **Photos** | How many new progress photos per project with a link to that project's Photos sheet. Thumbnails are attached only when *Attach photo previews* is on (up to four per project, signed links valid 7 days) | `files` (bucket `photos`) |
+| **Leads** *(switch)* | New inquiries in the window and how many are still waiting | `leads` |
+| **Subcontractors** *(switch)* | New applications and applications waiting for manual review | `subcontractor_applications` |
+
+### 0.1 Architecture
+
+```
+scheduler ── Supabase pg_cron + pg_net (every 15 min)  ─or─  Vercel Cron
+   │   POST https://<app>/api/brief/run   Authorization: Bearer <BRIEF_CRON_SECRET>
+   ▼
+app/api/brief/run/route.ts      timing-safe secret check · 60 s budget · service-role client
+   ▼
+lib/brief/server/run.ts         runBriefs(): for every company that has settings
+   ├─ isDue(settings, now)           lib/brief/schedule.ts    local date/time in the company's timezone
+   ├─ claimBrief()                   unique (company_id, brief_date, kind)  ◄── the idempotency point
+   ├─ gatherFacts()                  lib/brief/server/gather.ts  one parallel read of the company
+   ├─ attentionItems(facts)          lib/brief/attention.ts   pure rules, unit-tested
+   ├─ composeBrief(facts)            lib/brief/compose.ts     sections → items, every item with a link
+   ├─ writeNarrative(doc)            lib/brief/server/narrative.ts  optional 3-sentence intro (model)
+   ├─ store                          daily_briefs: facts, doc, narrative, summary, attention_count
+   ├─ deliver()                      lib/brief/server/email.ts  Resend + Idempotency-Key, one row per recipient
+   └─ stampRun()                     daily_brief_settings.last_run_at / last_run_note (shown on Sheet 14)
+```
+
+- **Pure core, thin shell.** `schedule`, `attention`, `compose`, `render` and `types` are pure
+  modules with unit tests (`lib/brief/*.test.ts`). The server modules only fetch and store.
+- **Facts first, words second.** The brief is a typed `BriefFacts` object (projects, schedule,
+  budget, progress, photos, leads, applications, attention) turned into a `BriefDoc` (sections →
+  groups → items with `href`s). The model is asked, optionally, for a short introduction *about
+  that document* and nothing else; if `ANTHROPIC_API_KEY` is missing or the call fails, the brief
+  is still written without it. The narrative is stored separately and labelled as Bob's summary.
+- **Links, not URLs.** Every `href` is built by the server from the app's route map
+  (`/projects/<id>?tab=budget`, `/briefs/<id>`, …); the model never produces a link.
+- **The window.** From the previous *ready* scheduled brief to now (capped at 14 days), or the
+  last 24 hours for a company's first brief. Progress-% changes compare with the previous brief's
+  stored facts, so "moved from 40 % to 55 %" is exact.
+- **Tables (migration 0009).** `daily_brief_settings` (one row per company),
+  `daily_briefs` (one per company · local date · kind), `daily_brief_deliveries` (one per brief ·
+  recipient), plus `leads` and `subcontractor_applications` so the Leads and Subcontractors
+  sections report real rows. All audited, all under RLS.
+- **Capabilities.** `briefs.view` (Owner, Admin, PM, Estimator) reads briefs and the settings;
+  `settings.manage` (Owner, Admin) edits settings, sees delivery status and can run a test brief;
+  `leads.view` / `leads.manage` and the existing `subcontractors.*` govern the two new tables. No
+  role can insert or edit a brief — only the server process writes them.
+
+### 0.2 Settings — Sheet 14 · `/settings`
+
+| Setting | Default | Notes |
+|---|---|---|
+| Enable | off | Nothing runs until the owner turns it on |
+| Delivery time | 07:00 | `HH:MM`; the scheduler ticks every 15 minutes, so the brief lands within that window after the time |
+| Timezone | the company's timezone | Any IANA name (`America/Chicago`); validated, falls back to UTC if unknown |
+| Email recipients | none | One per line or comma-separated; validated on save. No recipients = stored, not emailed |
+| Include budget | on | Removes the Budget section and money-based attention items when off |
+| Include applications | on | Subcontractor applications section |
+| Include leads | on | Leads section |
+| Include completed projects | off | Adds recently completed projects and keeps completed ones in the lists |
+| Attach photo previews | off | Off: a link to Photos only. On: thumbnails in the email |
+
+**Generate & send me a test brief** (settings.manage) runs the whole process now for the person's
+company as a *manual* brief, ignoring the switch and the delivery time, and emails it to the
+person's own address only. The sheet also shows the scheduler's last check-in ("Checked at 06:45:
+before delivery time 07:00", "Generated the scheduled brief for 2026-09-02 at 07:00; 2/2 emails
+sent", or the error) so the owner can see the scheduler is alive without opening Supabase.
+
+### 0.3 Delivery
+
+- **Stored.** `/briefs` lists every brief (date, kind, summary, attention count, status);
+  `/briefs/[id]` renders the document with in-app links. People with `settings.manage` also see
+  the delivery log there (recipient, sent / failed / skipped, provider id, error).
+- **Dashboard card — Bob's Daily Brief** on `/projects`: the newest ready brief's summary, the
+  top three attention items with links, *Read the brief* and *Settings*.
+- **Email** (Resend): a single-column, 600 px, inline-styled message that reads on a phone —
+  Bob's introduction, then each section as short lines with the same links, and a footer with
+  *Open in Monarch Admin*, *Projects* and *Settings*. Recipients who are team members whose role
+  cannot see money (`budgets.view`) receive a variant without budget figures; addresses that are
+  not team members receive the full brief, so put only the owner's and PMs' addresses in the list.
+- **Bob** can read it: *"What did this morning's brief say?"* → `get_daily_brief` (date and
+  section optional); *"take me to the brief"* / *"open settings"* navigate to the new sheets.
+
+### 0.4 No duplicate briefs, no duplicate emails
+
+A scheduled function retries; two ticks can overlap; a deploy can restart a run half-way. The
+design assumes all three:
+
+1. **Claim before work.** The brief row is inserted with `on conflict do nothing` on the unique
+   index `(company_id, brief_date, kind)` *before* any data is read. A second run for the same
+   local date gets no row and stops. A row that is `failed`, or still `generating` after 15
+   minutes (a crashed run), can be taken over — once — by the next tick.
+2. **One delivery row per recipient** (`unique (brief_id, recipient_email)`) with a status.
+   Rows already `sent` are never sent again. `failed` rows (provider down, bad address) and rows
+   `skipped` while email was unconfigured are retried by later ticks, up to three attempts.
+3. **Provider idempotency.** Every send carries `Idempotency-Key: brief-<briefId>-<email>`; Resend
+   drops a repeated request with the same key even if the status update after a send was lost.
+4. **The due check** is *"local time ≥ delivery time and no ready brief exists for today's local
+   date"* — not *"local time == delivery time"* — so a missed tick is simply caught by the next
+   one and a late tick never produces a second brief.
+
+### 0.5 Scheduler and deployment configuration
+
+1. **Migration**: run `supabase/migrations/0009_daily_brief.sql` after 0008 (SQL editor or
+   `supabase db push`).
+2. **Environment variables** on the server (Vercel → Settings → Environment Variables):
+   `SUPABASE_SERVICE_ROLE_KEY` (the process reads as the system), `NEXT_PUBLIC_SITE_URL` (links in
+   the email), `BRIEF_CRON_SECRET` (`openssl rand -hex 32`), `RESEND_API_KEY` and
+   `BRIEF_FROM_EMAIL` (a sender on a domain verified in Resend), optionally `BRIEF_SITE_URL` and
+   `BRIEF_MODEL`. `ANTHROPIC_API_KEY` is only needed for the narrative. Redeploy.
+3. **Scheduler — option A, Supabase pg_cron + pg_net (recommended, no extra vendor):**
+   in the SQL editor, `select vault.create_secret('<the same secret>', 'brief_cron_secret');`
+   then open `supabase/scheduler/daily_brief_cron.sql`, replace `<your app>` with the deployed
+   host, and run it. It enables `pg_cron` and `pg_net` and schedules `monarch-daily-brief` to
+   POST `/api/brief/run` every 15 minutes with the secret from Vault (the secret is never written
+   into the job definition). The file is not a migration on purpose: it carries deployment data.
+   Check: `select jobname, schedule, active from cron.job;` and later
+   `select status, return_message, start_time from cron.job_run_details order by start_time desc limit 10;`.
+4. **Scheduler — option B, Vercel Cron:** add to the repository root
+   ```json
+   { "crons": [{ "path": "/api/brief/run", "schedule": "*/15 * * * *" }] }
+   ```
+   as `vercel.json` and set `CRON_SECRET` (Vercel sends it as the bearer token automatically; the
+   route accepts either `BRIEF_CRON_SECRET` or `CRON_SECRET`). Hobby projects allow one run per
+   day: use a daily schedule in UTC just after the delivery time (Central Time is UTC−5 in summer,
+   UTC−6 in winter — e.g. `"15 12 * * *"` for a 07:00 brief in summer) or use option A, which has
+   no such limit.
+5. **Turn it on** in Sheet 14 · Settings: recipients, time, timezone, switches → Save → *Generate &
+   send me a test brief*. The next morning the card on `/projects` shows the brief and the
+   Settings sheet shows the scheduler's check-ins.
+
+Calling `/api/brief/run` every 15 minutes is cheap: when nothing is due the route reads one
+settings table, stamps the check-in and returns. A run is capped at 60 s (`maxDuration`; the
+pg_net call times out at 55 s); a company of ordinary size takes a few seconds.
+
+### 0.6 What "Bob says you should look at" is allowed to say
+
+Rules, each over stored rows, each item carrying the figure and a link (`lib/brief/attention.ts`):
+
+| Rule | Severity |
+|---|---|
+| Overdue tasks on a project (oldest named, count) | medium; **high** when something is more than 7 days overdue |
+| Blocked tasks | medium |
+| Negative budget variance on a project | medium; **high** when ≥ $1,000 or ≥ 10 % of the budget |
+| Over-budget lines (only when the project's variance is not already listed) | medium |
+| Budget total above the contract amount | medium |
+| Behind schedule / past target date (the Overview's schedule chip) | medium; **high** when past due |
+| Active project with no activity for 5 or more days | medium |
+| Important incomplete items: urgent or high priority, milestones, overdue inspections | medium; **high** for urgent or > 7 days overdue |
+| Subcontractor applications waiting for review · leads waiting | medium |
+
+When the Budget switch is off, the money rules are dropped from the attention list too. A company
+with nothing wrong gets an empty section that says so — the composer's test asserts it.
+
+### 0.7 Remaining limitations
+
+- **No public intake forms yet.** `leads` and `subcontractor_applications` exist, are policy-
+  protected and audited, and the brief reports them honestly; until an intake form or inbox sheet
+  exists (a later phase), those sections read *none* unless rows are added by SQL.
+- **Email is Resend only**, and the sender domain must be verified there. Without a key the brief
+  is still generated and stored; deliveries are recorded as *skipped*.
+- **External recipients receive the full brief** (including money when the Budget switch is on).
+  Only team members are checked against `budgets.view`.
+- **One scheduled brief per company per local day.** Changing the delivery time to an earlier
+  hour after today's brief exists does not produce a second one; a *manual* brief can be generated
+  any time and replaces the day's earlier manual brief.
+- **Delivery within ±15 minutes** of the time, by design of the tick. A finer tick is a one-line
+  change in the cron schedule.
+- **The narrative is model-written** (facts-only instructions, short, labelled as Bob's summary).
+  The sections beneath it are the record; the narrative is not stored as company fact anywhere.
+- **Photo previews** are signed links valid 7 days; an old email's thumbnails expire (the link to
+  the Photos sheet does not).
+- **No SMS / push delivery**; no per-recipient customisation beyond the money-free variant.
+
+### 0.8 Verification (2026-09-02)
+
+`npm run check` — typecheck clean, ESLint 0 errors (the same 7 pre-existing warnings), 44 unit
+tests passing (schedule due-check and timezones, every attention rule, composer sections and
+money stripping, email HTML escaping). `npm run build` — `/api/brief/run`, `/briefs`,
+`/briefs/[id]`, `/settings` compile. `npm run db:test` — migrations 0001–0009 and every policy
+scenario pass, including the new *Daily brief* block (owner saves settings, service role claims a
+brief and a delivery exactly once under `on conflict do nothing`, PM reads but cannot write
+settings or briefs, employee sees nothing but applications). Not exercised here: a live Resend
+send and a live narrative call (no keys in this environment).
+
+---
+
+## 1. Phase 3 — Bob becomes the assistant and navigation layer of Monarch Admin
 
 Bob is no longer an estimator chatbot running in the browser with a pasted API key. He is one
 assistant on every page — floating panel everywhere, full width on **Sheet 15 · `/bob`** — who
@@ -30,7 +231,7 @@ unchanged; the estimator tools he always had now run server-side against the sha
 | "Set the electrical budget to $30,000" · "Delete the drywall task" · "Make Bea a project manager" | The tool returns *needs_confirmation*; a card appears: **Confirm** / **Cancel** (10-minute expiry). Nothing changes until you press Confirm |
 | "Roofing is 25k total" · "How many 2x4s for a 20×20 garage?" | The estimator tools (unchanged behaviour), now applied to the project's sheet in the database and reflected on the open screen |
 
-### 0.1 Bob architecture
+### 1.1 Bob architecture
 
 ```
 Browser ─ BobChat panel (components/BobChat.tsx) ──────────────────────────────────┐
@@ -79,7 +280,7 @@ Supabase ─ tables, RLS, triggers: audit_log rows stamped source = 'bob'
   full width. `lib/data/refresh-bus.ts` lets `useLiveRows` and `useProject` reload when Bob changed
   rows on the server.
 
-### 0.2 Available commands and tools
+### 1.2 Available commands and tools
 
 Tools are offered to the model only when the person holds one of the listed capabilities
 (Owner has all). *Guarded* = never runs without a Confirm.
@@ -119,7 +320,7 @@ Tools are offered to the model only when the person holds one of the listed capa
 | Memory | `remember_preference`, `forget_preference` | — | `preferred_name`, `answer_style`, `default_project`, `note` — this person only |
 | Web | Anthropic `web_search` / `web_fetch` | `estimates.edit` | Product links only (server tools, max 4 uses) |
 
-### 0.3 Permission system
+### 1.3 Permission system
 
 Three layers, in order:
 
@@ -137,7 +338,7 @@ Using Bob at all needs the new **`bob.use`** capability (granted to every role b
 Owner can revoke it per role in `role_permissions`). Conversations, pending actions and
 preferences are readable and writable only by their own person (RLS: `user_id = auth.uid()`).
 
-### 0.4 Confirmation system
+### 1.4 Confirmation system
 
 A tool may declare a `guard(ctx, input)`. In the chat loop the guard runs *instead of* `execute`:
 it resolves names to ids, reads the current values, and returns a sensitivity and a plain-English
@@ -160,7 +361,7 @@ sections), **money** (budget lines, contract amount), **permissions** (role chan
 vocabulary for the phases that add external email and applications; no tool sends email or
 decides applications today.
 
-### 0.5 Memory architecture
+### 1.5 Memory architecture
 
 | Memory | Where | Rules |
 |---|---|---|
@@ -168,7 +369,7 @@ decides applications today.
 | **User preferences** | `bob_user_preferences.preferences` (JSON: `preferred_name`, `answer_style`, `default_project`, `note`) | Written only by `remember_preference` when the person asks; the tool refuses values that look like project or secret information. Never company data. |
 | **Verified company information** | The project tables, through tools, on every turn | The brief: facts *must* come from tool results in this conversation; never from memory or earlier turns when a tool can give the current value; state numbers exactly with their source and moment; anything worth keeping becomes a note, task or budget figure through a tool, never a hidden "memory". Bob cannot write company fact anywhere except through the same tools people use. |
 
-### 0.6 Grounding, context and security rules (in the brief)
+### 1.6 Grounding, context and security rules (in the brief)
 
 - Facts only from tools; "I haven't checked" when he hasn't; exact numbers; missing data named.
 - Inside a project, unqualified questions refer to it; outside, `search_projects`; ambiguity that
@@ -182,7 +383,7 @@ decides applications today.
 - The model loop is bounded (12 rounds, 8 k output tokens, 4 web-tool uses), tool results are
   capped, and a per-person daily turn cap (default 200) returns a friendly 429.
 
-### 0.7 Activity logging
+### 1.7 Activity logging
 
 Every change Bob makes goes through the ordinary tables, so the existing audit triggers write the
 same verb-first sentences as the screens — now with `source = 'bob'` (the server's client sends an
@@ -194,19 +395,19 @@ result) complete the record. Tests in `supabase/tests/policies.sql` cover the st
 fallback to `ui` for unknown or malformed headers, thread privacy, frozen actions, and the
 `bob.use` switch.
 
-### 0.8 What the owner must do
+### 1.8 What the owner must do
 
 1. Run `supabase/migrations/0008_bob.sql` (SQL editor or `supabase db push`).
 2. Set `ANTHROPIC_API_KEY` in the deployment (server-side only). Optional: `BOB_MODEL`,
    `BOB_EFFORT`, or `bob.model` / `bob.dailyTurnCap` in `companies.settings`.
 3. Nothing in the browser to configure; the old pasted key is purged automatically.
 
-### 0.9 Remaining limitations
+### 1.9 Remaining limitations
 
-- **No email, no applications, no daily update yet.** The confirmation vocabulary is ready
-  (`email`, `applicant`), but there are no tools for them because those features are later phases.
-  Asked for the applications inbox, Bob says it is not built and offers the subcontractor
-  directory (Sheet 06, new in this phase, directory only).
+- **No email-sending or applicant tools for Bob yet.** The confirmation vocabulary is ready
+  (`email`, `applicant`), but Bob has no tools for them because the intake forms are a later
+  phase. The daily brief exists since phase 4 (§0) and Bob reads it with `get_daily_brief`; asked
+  for the applications inbox, Bob says it is not built and offers the subcontractor directory.
 - **No photo upload or file upload through Bob** — he finds, lists and opens files; uploading
   stays on the Photos / Plans sheets (it needs the device's camera or file picker).
 - **Single company per person** (as in phases 1–2). **Daily cap and model** are set by SQL in
@@ -220,7 +421,7 @@ fallback to `ui` for unknown or malformed headers, thread privacy, frozen action
   results are never treated as company fact.
 - **Confirmation cards live in the chat**; there is no separate "pending actions" sheet yet.
 
-### 0.10 Verification (2026-09-02)
+### 1.10 Verification (2026-09-02)
 
 `npm run check` — typecheck clean, ESLint 0 errors (7 pre-existing warnings in inherited
 components), 35 unit tests (13 existing + 22 new) passing. `npm run build` — all routes compile
@@ -232,7 +433,7 @@ this environment) — the loop, streaming and tool plumbing are typed against `@
 
 ---
 
-## 1. Phase 2 — the project management experience
+## 2. Phase 2 — the project management experience
 
 Opening a project now answers the site questions directly, on a phone or a desktop, in the
 estimator's own visual language. Nine tabs, in this order: **Overview · Budget · Estimate ·
@@ -289,7 +490,7 @@ counts, money and `display_progress_pct` + `progress_source`. New capabilities:
 companies). Progress is now calculated from tasks and checklist items only; estimate check-offs
 are shown separately as "materials handled".
 
-## 2. What phase 1 delivered
+## 3. What phase 1 delivered
 
 The Agromex quote sheet is now **Monarch Admin**: the same estimator, same visual system, but every
 piece of business information lives in a central Supabase database behind sign-in, roles and
@@ -320,7 +521,7 @@ browser-only data, Monarch branding (config-driven), CI, and this document.
 
 ---
 
-## 3. What is now database-backed
+## 4. What is now database-backed
 
 Everything below is stored in Supabase Postgres and visible on any authenticated device according
 to the user's role. Nothing in this list is read from or written to the browser as a source of truth.
@@ -354,7 +555,7 @@ to the user's role. Nothing in this list is read from or written to the browser 
   person), `bob_pending_actions` (the confirmation gate), `bob_user_preferences` (what each person
   asked Bob to remember about themselves). None of these is ever a source of company fact.
 
-## 4. What still lives in the browser (and why that is fine)
+## 5. What still lives in the browser (and why that is fine)
 
 | Item | Kind | Notes |
 |---|---|---|
@@ -368,7 +569,7 @@ There is **no** business record whose only copy is in a browser, and **no** secr
 
 ---
 
-## 5. Architecture decisions
+## 6. Architecture decisions
 
 1. **Supabase as the central backend** (Postgres + RLS, Auth, Storage, Realtime). Chosen because
    the security boundary — who may read or change which row — belongs next to the data, and
@@ -468,7 +669,7 @@ Phase 3 (Bob):
 
 ---
 
-## 6. Supabase configuration (what the owner must do)
+## 7. Supabase configuration (what the owner must do)
 
 1. **Create a Supabase project** (Pro plan recommended once real data lives there — no pausing,
    daily backups). Region close to Dallas–Fort Worth.
@@ -476,8 +677,9 @@ Phase 3 (Bob):
    `supabase link`) or by pasting each file from `supabase/migrations/` into the SQL editor:
    `0001_foundation.sql` → `0002_projects_estimates.sql` → `0003_budgets_tasks_notes_files.sql` →
    `0004_audit.sql` → `0005_storage.sql` → `0006_realtime.sql` → `0007_project_management.sql` →
-   `0008_bob.sql`. (Already on 0007? Run 0008 alone — it is additive: Bob's tables, the `bob.use`
-   capability seeded for every role, and the audit trigger's `source` stamping.)
+   `0008_bob.sql` → `0009_daily_brief.sql`. (Already on 0008? Run 0009 alone — it is additive:
+   the daily-brief tables, `leads`, `subcontractor_applications` and the `briefs.view` /
+   `leads.*` capabilities. Already on 0007? Run 0008 then 0009.)
 3. **Authentication → Providers → Email**: keep Email enabled. **Disable "Allow new users to sign
    up"** (access is by invitation). Keep "Confirm email" on.
 4. **Authentication → URL configuration**: set *Site URL* to the deployed address and add
@@ -496,19 +698,29 @@ Phase 3 (Bob):
      the app works and Bob says he is not configured.
    - `BOB_MODEL` / `BOB_EFFORT` (optional) — default `claude-opus-5` / `medium`; a company can also
      set `bob.model` and `bob.dailyTurnCap` in `companies.settings` (JSON) from the SQL editor.
+   - `BRIEF_CRON_SECRET` — **server only**; the bearer token the scheduler presents to
+     `/api/brief/run` (`openssl rand -hex 32`). With Vercel Cron, `CRON_SECRET` works as well.
+   - `RESEND_API_KEY` + `BRIEF_FROM_EMAIL` — **server only**; email delivery of the daily brief
+     through Resend, from a sender on a verified domain. Without them briefs are generated and
+     stored, and every delivery is recorded as *skipped*.
+   - `BRIEF_SITE_URL` / `BRIEF_MODEL` (optional) — link base for the email (defaults to
+     `NEXT_PUBLIC_SITE_URL`) and the model for the brief's narrative (defaults to `BOB_MODEL`).
 8. **Storage**: buckets `plans` and `photos` are created by migration 0005 (private). Raise the
    per-file limit on `plans` in the dashboard if plan sets exceed 50 MB.
 9. **Realtime**: migration 0006 adds the shared tables to the `supabase_realtime` publication.
    Check Database → Replication shows them if live updates do not appear.
 10. **Backups**: enable daily backups (Pro). The old JSON export button is gone on purpose; the
     database is the backup source now.
+11. **Scheduler for Bob's Daily Brief**: after the deploy, store the secret in Vault and run
+    `supabase/scheduler/daily_brief_cron.sql` (or add a Vercel Cron). Step by step, with the
+    checks, in §0.5.
 
 Deploying: connect the GitHub repo to Vercel, set the variables above, build command `next build`.
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests, build and the database tests.
 
 ---
 
-## 7. How to run locally
+## 8. How to run locally
 
 ```bash
 cp .env.example .env.local        # fill in the Supabase values
@@ -522,17 +734,18 @@ npm run db:test                   # migrations + policy tests on a local Postgre
 
 ---
 
-## 8. Known limits and what comes next
+## 9. Known limits and what comes next
 
 - **Schedule health is straight-line** (elapsed time vs. work complete). Phase planned dates are
   stored and shown; a phase-weighted expected curve is a later refinement.
-- **Subcontractors** are a directory only; applications and onboarding are a later phase.
+- **Subcontractors** are a directory plus an applications table (phase 4); the public application
+  form and the review inbox are a later phase.
 - **Activity grouping** happens in the feed (photo bursts); the database keeps one row per event.
 
-- **Bob** is server-side and app-wide now (phase 3, §0). What he cannot do yet is listed in §0.9.
-- **Daily update, subcontractor applications, dashboard, permission editor UI, Settings** are later
-  phases (plan §13). The Team sheet already lets Owners/Admins change roles; the Subcontractors
-  sheet (06) is a directory only.
+- **Bob** is server-side and app-wide now (phase 3, §1). What he cannot do yet is listed in §1.9.
+- **Bob's Daily Brief and the Settings sheet** are built (phase 4, §0). **Lead and application
+  intake forms, a full dashboard, and the permission editor UI** are later phases (plan §13). The
+  Team sheet already lets Owners/Admins change roles.
 - **Estimates have one version per project** for now; `estimates.version` exists for
   sent/accepted versions later.
 - **Concurrent edits** to the same line are last-write-wins per row (shown via realtime).
@@ -540,7 +753,7 @@ npm run db:test                   # migrations + policy tests on a local Postgre
 - The research datasets and premade checklists remain in code (`lib/research*.ts`,
   `lib/templates.ts`) by design.
 
-## 9. File map
+## 10. File map
 
 ```
 app.config.ts                       company identity (Monarch)
@@ -553,6 +766,14 @@ app/(app)/team/page.tsx             Sheet 13 · members, invitations, profile
 app/(app)/guide/page.tsx            unchanged cost guide (now protected)
 app/(app)/bob/page.tsx              Sheet 15 · Bob full page
 app/(app)/subcontractors/page.tsx   Sheet 06 · subcontractor directory
+app/(app)/briefs/                   Sheet 16 · every daily brief, and one brief with its delivery log
+app/(app)/settings/page.tsx         Sheet 14 · Settings: Bob's Daily Brief
+app/api/brief/run/route.ts          the scheduler's entry point (secret) and the manual test run
+components/brief/                   BriefView (the document), BriefCard (dashboard card)
+lib/brief/                          types, schedule (due check), attention (rules), compose, render — pure, unit-tested
+lib/brief/server/                   gather (service-role reads), narrative, email (Resend), run (the process)
+lib/data/briefs.ts                  client API: briefs, deliveries, settings, "run now"
+supabase/scheduler/daily_brief_cron.sql   pg_cron + pg_net job (run by hand after deploying)
 app/api/bob/route.ts                Bob turn (NDJSON stream), server-side model loop
 app/api/bob/confirm/route.ts        confirmation gate: confirm / decline a pending action
 app/api/bob/conversations/route.ts  the open thread for a page; "New conversation"
@@ -560,7 +781,7 @@ components/BobChat.tsx              the chat panel (floating on every page, full
 lib/bob/protocol.ts, routes.ts, match.ts, guard.ts, time.ts, digest.ts   pure, unit-tested
 lib/bob/knowledge.ts                Bob's standing brief (app map, rules, estimating knowledge)
 lib/bob/tools.ts                    the estimator tools (pure transitions on the sheet)
-lib/bob/server/                     session, data queries, registry, tools/*, context, memory, confirm, run
+lib/bob/server/                     session, data queries, registry, tools/* (incl. briefs), context, memory, confirm, run
 lib/data/refresh-bus.ts             in-page "these tables changed" signal
 app/api/team/invite/route.ts        invitation (server-only service key)
 components/shell/                   NotConfigured / NoAccess / Bootstrap gates
@@ -571,6 +792,6 @@ lib/data/phases.ts, subcontractors.ts, progress.ts   phase-2 data modules and pu
 components/ui.tsx                   TopBar with user chip, Crown, shared state marks
 lib/data/                           Supabase clients, types, diff writer, hooks, module APIs
 lib/legacy-store.ts                 read-only reader for the old browser data
-supabase/migrations/                0001–0008 (0008 = Bob)
+supabase/migrations/                0001–0009 (0008 = Bob, 0009 = daily brief, leads, applications)
 supabase/tests/                     local-stubs.sql, policies.sql, run-local.sh
 ```

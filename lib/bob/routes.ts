@@ -26,6 +26,8 @@ export type Destination =
   | "team"
   | "subcontractors"
   | "applications"
+  | "briefs"
+  | "settings"
   | "guide"
   | "bob";
 
@@ -66,6 +68,8 @@ export const DESTINATIONS: Record<Destination, DestinationSpec> = {
       "Subcontractor applications aren't part of Monarch Admin yet — that inbox is a planned phase. The subcontractor directory is available.",
     aliases: ["applications", "applicants", "subcontractor applications", "onboarding"],
   },
+  briefs: { label: "Daily briefs", path: "/briefs", requires: "briefs.view", aliases: ["daily brief", "brief", "briefing", "morning report"] },
+  settings: { label: "Settings", path: "/settings", requires: "settings.manage", aliases: ["settings", "brief settings", "configuration"] },
   guide: { label: "Cost guide", path: "/guide", aliases: ["cost guide", "guide", "reference", "research"] },
   bob: { label: "Bob", path: "/bob", aliases: ["bob", "assistant", "chat"] },
 };

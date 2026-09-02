@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { appConfig } from "@/app.config";
+import { BriefCard } from "@/components/brief/BriefCard";
 import { EmptyMark, ErrorMark, Label, LoadingMark, Modal, TopBar } from "@/components/ui";
 import { describeError } from "@/lib/data/client";
 import type { ProjectSummaryRow } from "@/lib/data/database.types";
@@ -150,6 +151,11 @@ export default function ProjectsPage() {
         {actionError && (
           <p className="mt-3 border border-ink bg-paper-2 px-4 py-2 font-mono text-xs">⚠ {actionError}</p>
         )}
+
+        {/* ── Dashboard card: Bob's Daily Brief ─────────────────────── */}
+        <div className="mt-6">
+          <BriefCard />
+        </div>
 
         {/* ── Project cards ───────────────────────────────────────── */}
         <section className="mt-8">

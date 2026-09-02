@@ -479,6 +479,102 @@ export type BobUserPreferencesRow = {
   updated_at: string;
 }
 
+export type DailyBriefSettingsRow = {
+  company_id: string;
+  enabled: boolean;
+  delivery_time: string;
+  timezone: string;
+  recipients: string[];
+  include_budget: boolean;
+  include_applications: boolean;
+  include_leads: boolean;
+  include_completed_projects: boolean;
+  include_photo_previews: boolean;
+  last_run_at: string | null;
+  last_run_note: string;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type DailyBriefRow = {
+  id: string;
+  company_id: string;
+  brief_date: string;
+  kind: "scheduled" | "manual";
+  timezone: string;
+  status: "generating" | "ready" | "failed";
+  window_start: string | null;
+  window_end: string | null;
+  previous_brief_id: string | null;
+  settings: Json;
+  facts: Json;
+  doc: Json;
+  narrative: string;
+  summary: string;
+  attention_count: number;
+  error: string | null;
+  requested_by: string | null;
+  started_at: string;
+  generated_at: string | null;
+  created_at: string;
+}
+
+export type DailyBriefDeliveryRow = {
+  id: string;
+  company_id: string;
+  brief_id: string;
+  recipient_email: string;
+  status: "pending" | "sent" | "failed" | "skipped";
+  provider_id: string | null;
+  error: string | null;
+  attempts: number;
+  attempted_at: string | null;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export type LeadRow = {
+  id: string;
+  company_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  message: string;
+  source: string;
+  status: "new" | "contacted" | "qualified" | "closed" | "spam";
+  assigned_to: string | null;
+  project_id: string | null;
+  notes: string;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type SubcontractorApplicationRow = {
+  id: string;
+  company_id: string;
+  company_name: string;
+  contact_name: string;
+  trade: string;
+  phone: string;
+  email: string;
+  message: string;
+  source: string;
+  status: "new" | "reviewing" | "accepted" | "declined";
+  subcontractor_id: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  notes: string;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 /** What my_context() returns for the signed-in user. */
 export interface MyContext {
   user_id: string | null;
@@ -521,6 +617,11 @@ export type Database = {
       bob_messages: Table<BobMessageRow>;
       bob_pending_actions: Table<BobPendingActionRow>;
       bob_user_preferences: Table<BobUserPreferencesRow>;
+      daily_brief_settings: Table<DailyBriefSettingsRow>;
+      daily_briefs: Table<DailyBriefRow>;
+      daily_brief_deliveries: Table<DailyBriefDeliveryRow>;
+      leads: Table<LeadRow>;
+      subcontractor_applications: Table<SubcontractorApplicationRow>;
     };
     Views: {
       project_summary: { Row: ProjectSummaryRow; Relationships: never[] };

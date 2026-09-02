@@ -7,6 +7,7 @@ import type { Json } from "./database.types";
 import { carryUiState, diffProject, isEmptyChangeSet, rowsToProject } from "./estimate-view";
 import { loadEstimateBundle } from "./projects";
 import { subscribeRows } from "./realtime";
+import { onRefresh } from "./refresh-bus";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -32,6 +33,7 @@ export interface ProjectHandle {
 }
 
 const DEBOUNCE_MS = 400;
+const ESTIMATE_TABLES = new Set(["projects", "estimates", "estimate_sections", "estimate_items", "estimate_item_options"]);
 const RETRY_MS = [2000, 4000, 8000, 16000];
 
 /**
@@ -221,6 +223,22 @@ export function useProject(projectId: string | null, opts: { canEdit: boolean; u
     );
     return unsubscribe;
   }, [projectId, estimateId, load, opts.userId]);
+
+  // Bob edits the sheet on the server as this same user, so the realtime
+  // echo above is ignored as "ours"; the refresh bus says when to re-read.
+  useEffect(() => {
+    if (!projectId) return;
+    return onRefresh((d) => {
+      if (d.projectId && d.projectId !== projectId) return;
+      if (!d.tables.some((t) => ESTIMATE_TABLES.has(t))) return;
+      if (dirty.current || inFlight.current) {
+        remoteDirty.current = true;
+        return;
+      }
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => void load().catch(() => {}), 150);
+    });
+  }, [projectId, load]);
 
   // Flush on unmount / tab close so the last keystrokes are never lost.
   useEffect(() => {

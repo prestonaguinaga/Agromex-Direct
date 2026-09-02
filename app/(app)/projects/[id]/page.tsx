@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { BobChat } from "@/components/BobChat";
 import { EstimatorPanel } from "@/components/EstimatorPanel";
 import { InfoPanel } from "@/components/InfoPanel";
 import { PrintSheet } from "@/components/PrintSheet";
@@ -210,7 +209,6 @@ function ProjectWorkspace() {
           </main>
         </div>
 
-        {canEditEstimate && estimateId && tab === "estimate" && <BobChat project={project} update={update} />}
         {totals && canSeeMoney && <PrintSheet project={project} totals={totals} />}
       </div>
     </ProjectDataProvider>

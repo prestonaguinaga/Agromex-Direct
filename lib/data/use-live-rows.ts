@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { describeError } from "./client";
 import { subscribeRows, type TableSub } from "./realtime";
+import { onRefresh } from "./refresh-bus";
 
 export interface LiveRows<T> {
   rows: T[];
@@ -70,10 +71,17 @@ export function useLiveRows<T>(
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => void reload(), 150);
     });
+    // Server-side changes (Bob) announce themselves on the refresh bus.
+    const offRefresh = onRefresh((d) => {
+      if (!d.tables.some((t) => subsRef.current.some((s) => s.table === t))) return;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => void reload(), 100);
+    });
     return () => {
       alive.current = false;
       if (timer.current) clearTimeout(timer.current);
       unsubscribe();
+      offRefresh();
     };
   }, [key, enabled, reload]);
 

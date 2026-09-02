@@ -38,3 +38,11 @@ export async function addSubcontractor(input: {
   if (error) throw error;
   return data;
 }
+
+export async function updateSubcontractor(
+  id: string,
+  patch: Partial<Pick<SubcontractorRow, "name" | "trade" | "contact_name" | "phone" | "email" | "notes" | "status">>,
+): Promise<void> {
+  const { error } = await supabase().from("subcontractors").update(patch).eq("id", id);
+  if (error) throw error;
+}

@@ -119,42 +119,4 @@ export async function updateBudget(
   if (error) throw error;
 }
 
-export interface BudgetFigures {
-  contract: number | null;
-  budgeted: number;
-  committed: number;
-  actual: number;
-  /** Budget left to pay out: budgeted − spent. */
-  remaining: number;
-  /** Projected position at completion: budgeted − committed − spent (negative = over). */
-  variance: number;
-  /** Approved budget versus the contract (negative = budget exceeds contract). */
-  contractDelta: number | null;
-}
-
-/** The numbers Overview and Budget both show; one definition so they never disagree. */
-export function budgetFigures(budget: BudgetRow | null, lines: BudgetLineRow[]): BudgetFigures {
-  const t = budgetTotals(lines);
-  const contract = budget?.contract_amount == null ? null : Number(budget.contract_amount);
-  return {
-    contract,
-    budgeted: t.budgeted,
-    committed: t.committed,
-    actual: t.actual,
-    remaining: t.budgeted - t.actual,
-    variance: t.variance,
-    contractDelta: contract == null ? null : contract - t.budgeted,
-  };
-}
-
-export function budgetTotals(lines: BudgetLineRow[]) {
-  const t = lines.reduce(
-    (acc, l) => ({
-      budgeted: acc.budgeted + Number(l.budgeted),
-      committed: acc.committed + Number(l.committed),
-      actual: acc.actual + Number(l.actual),
-    }),
-    { budgeted: 0, committed: 0, actual: 0 },
-  );
-  return { ...t, variance: t.budgeted - t.committed - t.actual };
-}
+export { budgetFigures, budgetTotals, type BudgetFigures } from "./budget-math";

@@ -421,6 +421,64 @@ export type ProjectSummaryRow = {
   budget_actual: number;
 }
 
+export type BobConversationRow = {
+  id: string;
+  company_id: string;
+  user_id: string;
+  project_id: string | null;
+  title: string;
+  summary: string;
+  summary_through: string | null;
+  turns: number;
+  started_at: string;
+  last_message_at: string;
+  ended_at: string | null;
+}
+
+export type BobMessageRole = "user" | "assistant" | "tool" | "event";
+
+export type BobMessageRow = {
+  id: string;
+  company_id: string;
+  conversation_id: string;
+  user_id: string;
+  role: BobMessageRole;
+  text: string;
+  tool_name: string | null;
+  tool_input: Json | null;
+  tool_ok: boolean | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  created_at: string;
+}
+
+export type BobSensitivity = "delete" | "money" | "permissions" | "email" | "applicant" | "other";
+export type BobActionStatus = "pending" | "executed" | "declined" | "expired" | "failed";
+
+export type BobPendingActionRow = {
+  id: string;
+  company_id: string;
+  user_id: string;
+  conversation_id: string | null;
+  project_id: string | null;
+  tool_name: string;
+  tool_input: Json;
+  preview: string;
+  sensitivity: BobSensitivity;
+  status: BobActionStatus;
+  result: string | null;
+  created_at: string;
+  expires_at: string;
+  resolved_at: string | null;
+}
+
+export type BobUserPreferencesRow = {
+  user_id: string;
+  company_id: string;
+  preferences: Json;
+  updated_at: string;
+}
+
 /** What my_context() returns for the signed-in user. */
 export interface MyContext {
   user_id: string | null;
@@ -459,6 +517,10 @@ export type Database = {
       subcontractors: Table<SubcontractorRow>;
       checklist_templates: Table<ChecklistTemplateRow>;
       checklist_template_items: Table<ChecklistTemplateItemRow>;
+      bob_conversations: Table<BobConversationRow>;
+      bob_messages: Table<BobMessageRow>;
+      bob_pending_actions: Table<BobPendingActionRow>;
+      bob_user_preferences: Table<BobUserPreferencesRow>;
     };
     Views: {
       project_summary: { Row: ProjectSummaryRow; Relationships: never[] };
@@ -477,7 +539,7 @@ export type Database = {
           p_entity_type: string;
           p_entity_id: string | null;
           p_summary: string;
-          p_source?: string;
+          p_source?: string | null;
         };
         Returns: number;
       };

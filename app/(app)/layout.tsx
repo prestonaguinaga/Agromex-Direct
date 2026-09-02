@@ -4,6 +4,7 @@ import { loadMyContext } from "@/lib/data/server";
 import { SessionProvider } from "@/lib/data/session";
 import { BootstrapCompany, NoAccess, NotConfigured } from "@/components/shell/Gates";
 import { Presence } from "@/components/shell/Presence";
+import { BobChat } from "@/components/BobChat";
 
 /**
  * The signed-in shell. Runs on the server per request: loads the user's
@@ -27,6 +28,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SessionProvider userId={user.id} email={user.email ?? null} ctx={ctx}>
       <Presence userId={user.id} />
       {children}
+      {/* Bob rides along on every page; the /bob sheet renders him full width instead. */}
+      <BobChat mode="floating" />
     </SessionProvider>
   );
 }

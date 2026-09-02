@@ -106,7 +106,7 @@ function UserChip() {
   );
 }
 
-export type TopBarTab = "projects" | "team" | "guide" | "none";
+export type TopBarTab = "projects" | "subcontractors" | "team" | "guide" | "bob" | "none";
 
 export function TopBar({ active, sheet }: { active: TopBarTab; sheet?: string }) {
   const session = useSessionOptional();
@@ -131,8 +131,10 @@ export function TopBar({ active, sheet }: { active: TopBarTab; sheet?: string })
         </Link>
         <nav className="flex items-center gap-1">
           {tab("/projects", "Projects", active === "projects")}
+          {session?.can("subcontractors.view") && tab("/subcontractors", "Subs", active === "subcontractors")}
           {session?.can("team.view") && tab("/team", "Team", active === "team")}
           {tab("/guide", "Cost guide", active === "guide")}
+          {session?.can("bob.use") && tab("/bob", "🔨 Bob", active === "bob")}
           <span className="ml-3 hidden border-l pl-3 sm:block">
             <Clock />
           </span>

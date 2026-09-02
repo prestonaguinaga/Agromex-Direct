@@ -5,20 +5,7 @@ import { uid } from "../format";
 import { supabase } from "./client";
 import type { ChecklistTemplateItemRow, ChecklistTemplateRow, TaskListRow, TaskRow, TaskStatus } from "./database.types";
 
-export const STATUS_LABELS: Record<TaskStatus, string> = {
-  todo: "To Do",
-  in_progress: "In Progress",
-  blocked: "Blocked",
-  done: "Complete",
-};
-export const STATUS_ORDER: TaskStatus[] = ["todo", "in_progress", "blocked", "done"];
-
-export const PRIORITY_LABELS: Record<TaskRow["priority"], string> = {
-  low: "Low",
-  normal: "Normal",
-  high: "High",
-  urgent: "Urgent",
-};
+export { PRIORITY_LABELS, STATUS_LABELS, STATUS_ORDER, parsePriority, parseTaskStatus } from "./task-labels";
 
 export async function loadTaskLists(projectId: string): Promise<TaskListRow[]> {
   const { data, error } = await supabase()

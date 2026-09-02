@@ -364,6 +364,79 @@ do $$ begin
   assert (select count(*) from public.audit_log where project_id = test.u('PID')) > 0, 'employee sees project activity';
 end $$;
 
+-- ── Bob: conversations are private, actions are guarded, changes are stamped ─
+select test.as_user(test.u('B'));
+do $$ begin
+  assert (public.my_context()->'capabilities') ? 'bob.use', 'project manager may use Bob';
+  insert into public.bob_conversations (id, company_id, user_id, project_id, title)
+    values ('14141414-1414-1414-1414-141414141414', test.u('CID'), test.u('B'), test.u('PID'), 'Smith kitchen');
+  insert into public.bob_messages (company_id, conversation_id, user_id, role, text)
+    values (test.u('CID'), '14141414-1414-1414-1414-141414141414', test.u('B'), 'user', 'How are we doing on Smith?');
+  insert into public.bob_messages (company_id, conversation_id, user_id, role, text, tool_name, tool_input, tool_ok)
+    values (test.u('CID'), '14141414-1414-1414-1414-141414141414', test.u('B'), 'tool', 'get_project_summary', 'get_project_summary', '{"project_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}', true);
+  assert (select turns from public.bob_conversations where id = '14141414-1414-1414-1414-141414141414') = 1, 'user turns counted';
+  insert into public.bob_pending_actions (id, company_id, user_id, conversation_id, project_id, tool_name, tool_input, preview, sensitivity)
+    values ('15151515-1515-1515-1515-151515151515', test.u('CID'), test.u('B'), '14141414-1414-1414-1414-141414141414', test.u('PID'),
+            'set_budget_line', '{"category":"Electrical","budgeted":30000}', 'Change Electrical budget from $28,500 to $30,000', 'money');
+  insert into public.bob_user_preferences (user_id, company_id, preferences) values (test.u('B'), test.u('CID'), '{"answer_style":"short"}');
+  assert (select count(*) from public.bob_user_preferences where user_id = test.u('B')) = 1, 'preferences stored';
+end $$;
+
+-- Another member sees none of it and cannot write into it.
+select test.as_user(test.u('C'));
+do $$ begin
+  assert (select count(*) from public.bob_conversations) = 0, 'conversations are private';
+  assert (select count(*) from public.bob_messages) = 0, 'messages are private';
+  assert (select count(*) from public.bob_pending_actions) = 0, 'pending actions are private';
+  assert (select count(*) from public.bob_user_preferences) = 0, 'preferences are private';
+end $$;
+select test.expect_error(
+  format('insert into public.bob_messages (company_id, conversation_id, user_id, role, text) values (%L, %L, %L, ''user'', ''spoof'')',
+         test.u('CID'), '14141414-1414-1414-1414-141414141414', test.u('C')), '42501');
+select test.expect_error(
+  format('insert into public.bob_conversations (company_id, user_id) values (%L, %L)', test.u('CID'), test.u('B')), '42501');
+
+-- A pending action is frozen; only its outcome can be recorded, and only once.
+select test.as_user(test.u('B'));
+select test.expect_error(
+  format('update public.bob_pending_actions set tool_input = %L where id = %L', '{"budgeted": 999999}', '15151515-1515-1515-1515-151515151515'), '42501');
+do $$ begin
+  update public.bob_pending_actions set status = 'executed', result = 'Electrical budget is now $30,000'
+    where id = '15151515-1515-1515-1515-151515151515';
+  assert (select resolved_at is not null from public.bob_pending_actions where id = '15151515-1515-1515-1515-151515151515'), 'resolved_at stamped';
+end $$;
+select test.expect_error(
+  format('update public.bob_pending_actions set status = %L where id = %L', 'pending', '15151515-1515-1515-1515-151515151515'), '42501');
+
+-- Bob's changes are stamped in the activity log; unknown sources fall back to ui.
+select set_config('request.headers', '{"x-app-source":"bob"}', false);
+do $$ begin
+  update public.tasks set status = 'done' where title = 'Set trusses';
+  assert exists (select 1 from public.audit_log where summary = 'completed Set trusses' and source = 'bob'), 'bob source stamped';
+end $$;
+select set_config('request.headers', '{"x-app-source":"anything"}', false);
+do $$ begin
+  update public.tasks set status = 'in_progress' where title = 'Set trusses';
+  assert exists (select 1 from public.audit_log where summary = 'reopened task "Set trusses"' and source = 'ui'), 'unknown source reads as ui';
+end $$;
+select set_config('request.headers', 'not json', false);
+do $$ begin
+  assert audit.request_source() = 'ui', 'malformed header is ignored';
+end $$;
+select set_config('request.headers', '', false);
+
+-- The owner can switch Bob off for a role.
+select test.as_user(test.u('A'));
+update public.role_permissions set allowed = false where company_id = test.u('CID') and role = 'employee' and capability = 'bob.use';
+select test.as_user(test.u('C'));
+do $$ begin
+  assert not ((public.my_context()->'capabilities') ? 'bob.use'), 'employee lost bob.use';
+end $$;
+select test.expect_error(
+  format('insert into public.bob_conversations (company_id, user_id) values (%L, %L)', test.u('CID'), test.u('C')), '42501');
+select test.as_user(test.u('A'));
+update public.role_permissions set allowed = true where company_id = test.u('CID') and role = 'employee' and capability = 'bob.use';
+
 -- ── Soft delete hides everything downstream ──────────────────────────────────
 select test.as_user(test.u('A'));
 update public.projects set deleted_at = now() where id = test.u('PID');

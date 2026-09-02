@@ -75,7 +75,7 @@ export function ActivityPanel({ projectId }: { projectId: string }) {
                   </p>
                   <span className="microlabel tnum sm:text-right">
                     {new Date(item.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                    {row.source !== "ui" && ` · ${row.source}`}
+                    {row.source === "bob" ? " · via Bob" : row.source !== "ui" ? ` · ${row.source}` : ""}
                   </span>
                   {isMoney && (
                     <p className="microlabel tnum !normal-case sm:col-span-2">

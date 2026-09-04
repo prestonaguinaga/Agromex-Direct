@@ -24,7 +24,64 @@ async function withLinks(sb: Db, files: FileRow[]) {
   }));
 }
 
+const VIEWABLE_MIME = /^image\/(jpeg|png|gif|webp)$/;
+const MAX_VIEW_BYTES = 20 * 1024 * 1024;
+
 export const fileTools: ToolDef[] = [
+  {
+    name: "view_plan",
+    description:
+      "Open a stored plan, drawing or document (PDF or image) so you can actually look at it — room labels, layout, rough dimensions — before answering something that depends on what it shows, e.g. 'estimate redoing the bathroom' when a floor plan is on file. Only PDF and JPEG/PNG/GIF/WEBP files can be opened this way; .dwg/.dxf/Office files cannot — say so and ask for a PDF or image export instead. The plan is only visible for the rest of this turn, not remembered later — call this again in a future message if you need to look at it again.",
+    input_schema: schema({ ...PROJECT_PROPS, file: { type: "string", description: "Which plan/document, e.g. 'floor plan', 'bathroom plan'. Omit to open the most recently uploaded one." } }),
+    requires: ["files.view"],
+    kind: "read",
+    status: "opening the plan…",
+    execute: async (ctx, input) => {
+      const s = await resolveProject(ctx, input);
+      const { sb } = ctx.session;
+      const all = await loadFiles(sb, s.id, null, 500);
+      const candidates = all.filter((f) => f.kind === "plan" || f.kind === "document");
+      if (candidates.length === 0) throw new ToolError(`No plans or documents are on file for ${s.name} yet.`);
+
+      const query = str(input, "file");
+      let file: FileRow;
+      if (query) {
+        const m = matchByName(query, candidates, (f) => `${f.name} ${f.caption}`);
+        if (m.length === 0) throw new ToolError(`No plan/document matches "${query}" on ${s.name}. On file: ${candidates.map((f) => f.name).join(", ")}`);
+        const [top, second] = m;
+        if (!(top.score >= 40 && (!second || top.score - second.score >= 15 || top.score === 100))) {
+          throw new ToolError(
+            `Several files match "${query}": ${m.slice(0, 5).map((x) => x.project.name).join("; ")} — ask which one.`,
+            { candidates: m.slice(0, 5).map((x) => ({ id: x.project.id, name: x.project.name })) },
+          );
+        }
+        file = top.project;
+      } else {
+        file = [...candidates].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+      }
+
+      const mime = file.mime ?? "";
+      const isImage = VIEWABLE_MIME.test(mime);
+      const isPdf = mime === "application/pdf";
+      if (!isImage && !isPdf) {
+        throw new ToolError(`"${file.name}" is a ${mime || "file"} Bob can't open visually — only PDF or JPEG/PNG/GIF/WEBP images. Ask for a PDF or image export.`);
+      }
+      if (file.size_bytes && file.size_bytes > MAX_VIEW_BYTES) {
+        throw new ToolError(`"${file.name}" is ${Math.round(file.size_bytes / 1024 / 1024)} MB — too large to open here. Ask for a smaller export, or just the relevant sheet.`);
+      }
+
+      const urls = await signedUrls(sb, file.bucket, [file.storage_path]);
+      const url = urls.get(file.storage_path);
+      if (!url) throw new ToolError(`Couldn't get a link to "${file.name}" — try again in a moment.`);
+
+      return {
+        data: { opened: file.name, kind: file.kind, project: s.name },
+        event: `👁 opened "${file.name}" to look at it`,
+        attachments: [isPdf ? { type: "document", source: { type: "url", url }, title: file.name } : { type: "image", source: { type: "url", url } }],
+        projectId: s.id,
+      };
+    },
+  },
   {
     name: "get_project_photos",
     description:

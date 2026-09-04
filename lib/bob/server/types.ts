@@ -1,4 +1,5 @@
 import "server-only";
+import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, RoleKey } from "../../data/database.types";
 import type { GuardDecision } from "../guard";
@@ -58,6 +59,8 @@ export interface ToolResult {
   refresh?: string[];
   navigate?: { href: string; label: string };
   projectId?: string | null;
+  /** Image/PDF content for the model to actually see, alongside `data` (e.g. an opened plan). */
+  attachments?: Array<Anthropic.ImageBlockParam | Anthropic.DocumentBlockParam>;
 }
 
 export type ToolKind = "read" | "write" | "navigate" | "memory";

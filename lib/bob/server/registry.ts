@@ -13,7 +13,7 @@ import { noteTools } from "./tools/notes";
 import { projectTools } from "./tools/projects";
 import { taskTools } from "./tools/tasks";
 import { teamTools } from "./tools/team";
-import { ToolError, truncate, type Input, type ToolCtx, type ToolDef, type ToolKind } from "./types";
+import { ToolError, truncate, type Input, type ToolCtx, type ToolDef, type ToolKind, type ToolResult } from "./types";
 
 /**
  * The registry is the boundary between Bob and the application. Every tool
@@ -68,6 +68,8 @@ export interface RunOutcome {
   isError: boolean;
   log: ToolLogEntry;
   pending?: PendingActionView;
+  /** Image/PDF blocks the tool wants the model to see, alongside `content`. */
+  attachments?: ToolResult["attachments"];
 }
 
 const MAX_RESULT_CHARS = 14_000;
@@ -115,6 +117,7 @@ export async function runTool(def: ToolDef, ctx: ToolCtx, rawInput: unknown): Pr
       content: serialise(result.data),
       isError: false,
       log: { ...base, ok: true, summary: result.event ?? (result.navigate ? `→ ${result.navigate.label}` : `${def.name} ok`) },
+      attachments: result.attachments,
     };
   } catch (e) {
     const msg = describeToolError(e);

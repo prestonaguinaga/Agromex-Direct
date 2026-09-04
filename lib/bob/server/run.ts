@@ -108,7 +108,8 @@ export async function runBobTurn(a: TurnArgs): Promise<TurnOutcome> {
         emit({ type: "status", text: def.status });
         const out = await runTool(def, a.ctx, block.input);
         toolLog.push(out.log);
-        results.push({ type: "tool_result", tool_use_id: block.id, content: out.content, is_error: out.isError });
+        const content = out.attachments?.length ? [{ type: "text" as const, text: out.content }, ...out.attachments] : out.content;
+        results.push({ type: "tool_result", tool_use_id: block.id, content, is_error: out.isError });
       }
       messages.push({ role: "user", content: results });
       continue;

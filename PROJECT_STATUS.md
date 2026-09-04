@@ -1,11 +1,83 @@
 # Monarch Admin — Project Status
 
-**Phase:** 5 · Bob creates projects — **complete, builds green**
-(Phase 4 · Bob's Daily Brief — complete; Phase 3 · Bob, the site assistant — complete;
-Phase 2 · construction project management — complete; Phase 1 · backend foundation — complete)
+**Phase:** 6 · Bob reads uploaded plans — **complete, builds green**
+(Phase 5 · Bob creates projects — complete; Phase 4 · Bob's Daily Brief — complete; Phase 3 · Bob,
+the site assistant — complete; Phase 2 · construction project management — complete; Phase 1 ·
+backend foundation — complete)
 **Branch:** `claude/bob-create-project-tool-fi91im`
-**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is phase 4; this phase is not yet in that plan doc)
+**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is phase 4; phases 5–6 are not yet in that plan doc)
 **Last updated:** 2026-09-04
+
+---
+
+## Phase 6 — Bob reads an uploaded plan and grounds a rough estimate in it
+
+Until now Bob could *find* a plan (`search_files`) and hand back a link, but never *see* one — no
+image or PDF content ever reached the model. So "estimate what it would cost to redo the bathroom"
+could only be answered from the room name and the typical range. This phase gives Bob eyes: a
+**`view_plan`** tool opens a stored plan/drawing/document (PDF or image) as real model-visible
+content, and the standing brief tells Bob to look before estimating and to reason like a general
+contractor about what the job involves.
+
+**How it works.**
+
+1. **`view_plan`** (`lib/bob/server/tools/files.ts`, `requires: files.view`, read-only): resolves
+   the file by name/caption with the same `matchByName` pattern `search_files` uses (restricted to
+   `kind` plan/document; ambiguity → a clarifying error listing candidates; no name → the most
+   recently uploaded one), refuses non-viewable types with a plain message (only PDF and
+   JPEG/PNG/GIF/WEBP can be opened — `.dwg`/`.dxf`/Office files cannot), refuses files over 20 MB
+   with a "send the relevant sheet" hint, then gets the file's ordinary one-hour signed URL
+   (`signedUrls()`, unchanged, through the person's own RLS-scoped client) and returns it as an
+   `ImageBlockParam`/`DocumentBlockParam` with a `url` source. Anthropic fetches the link; the app
+   never downloads or base64-encodes bytes, and no service-role key is involved.
+2. **Plumbing** — three small, contained changes so a tool can attach image/PDF content:
+   `ToolResult.attachments?` (`lib/bob/server/types.ts`), `RunOutcome.attachments?` passed through
+   `runTool` (`lib/bob/server/registry.ts`, the 14 k-char text cap still applies to `data` only),
+   and the one `tool_result` line in `lib/bob/server/run.ts` that now builds a content array
+   (`[text, ...attachments]`) when attachments are present and the plain string otherwise. The
+   pinned `@anthropic-ai/sdk@0.122.0` already types both blocks (incl. URL sources) — no upgrade.
+3. **Memory stays text-only by design.** `historyForModel()` rebuilds history from
+   `bob_messages.text` alone, so an opened plan lives only in the current turn's live message
+   array — never written to the database, never silently replayed into later turns (cost and
+   storage stay flat). The tool description and brief tell Bob to call `view_plan` again in a later
+   message when it needs the plan again.
+4. **Brief** (`lib/bob/knowledge.ts`): `IDENTITY` now casts Bob as an experienced general
+   contractor — sequencing, trades, what gets missed, permit/inspection triggers — with an explicit
+   hedge that it is experience, not a code review or a site visit, and that the company's own
+   figures stay grounded in tools. `ESTIMATOR_EDIT` gains **READING AN UPLOADED PLAN**: look
+   before estimating, read labels/dimensions/fixture layout, work floor and wall sq ft from the
+   dimensions when legible, describe the scope as sequence → trades → materials → range, say which
+   figures came from the plan and which are typical, say plainly when the plan doesn't show
+   something and fall back to the typical range with that caveat, write to the sheet only when
+   asked (the Bathroom remodel template's line items are the starting checklist), and offer that a
+   plan would tighten things when none is on file. The `ACTIONS` inventory sentence lists the new
+   ability.
+5. **Nothing new on the estimating side** — the Bathroom remodel template (`lib/templates.ts`),
+   the researched ranges and material tiers (`lib/research.ts`), the prompted job-intake flow and
+   the `add_section`/`add_item` tools already existed and do the rest.
+
+**Files changed:** `lib/bob/server/tools/files.ts`, `lib/bob/server/types.ts`,
+`lib/bob/server/registry.ts`, `lib/bob/server/run.ts`, `lib/bob/knowledge.ts`. No database, RLS,
+storage or client changes: `files.kind = 'plan'`, the private `plans` bucket, `files.view` and
+signed-URL generation all already existed and already enforce the person's own permissions.
+
+**Limits, stated plainly.** Only PDF and image files can be opened — Chief Architect / CAD
+exports must be saved as PDF (or an image) first. Plan-reading quality depends on the file:
+a dimensioned, legible sheet gives real square footage; an undimensioned sketch gives a layout
+and a caveated typical range, and Bob is told to say which is which. Very large multi-sheet sets
+should be uploaded as the relevant sheet. Anthropic fetching the signed URL is one more network
+hop than before; if it fails, Bob reports it rather than guessing.
+
+### Verification (2026-09-04)
+
+`npm run typecheck` — clean · `npm run lint` — 0 errors (the same 7 pre-existing warnings) ·
+`npm run test` — 45 passing · `npm run build` — every route compiles. As with every phase, a live
+model turn (upload a plan, ask Bob to estimate the bathroom) is not exercisable in this
+environment (no Supabase project or `ANTHROPIC_API_KEY`); the tool's resolution, mime and size
+checks compile against the real `FileRow` types and the attachment path was traced through
+`runTool` → `run.ts` for both the image and the document branch. Whether the model reads a given
+scanned plan *well* is a property of that plan, not of this code, and is best judged on a real
+upload once deployed.
 
 ---
 
@@ -417,7 +489,8 @@ Tools are offered to the model only when the person holds one of the listed capa
 | Notes | `get_project_notes` | — | Newest first, search |
 | | `create_project_note` | `notes.create` | Author- and time-stamped; optional task / phase link |
 | | `delete_note` | author or `notes.manage` | **Guarded** (delete), soft delete |
-| Files | `get_project_photos` | `files.view` | Newest first, phase / period filters, one-hour links |
+| Files | `view_plan` | `files.view` | Opens a stored plan/document (PDF or image) as model-visible content so Bob can read labels, layout and dimensions before estimating (phase 6, above); refuses other file types and files over 20 MB with a plain message |
+| | `get_project_photos` | `files.view` | Newest first, phase / period filters, one-hour links |
 | | `search_files` | `files.view` | Plans, documents, receipts, photos by name / caption; one project or all |
 | Activity | `get_recent_activity` | `audit.view_project` or `audit.view_all` | Period, kind, minor edits toggle; who / what / when / via / old → new |
 | Team | `get_team` | `team.view` | Members, roles, last seen; who is on a project |

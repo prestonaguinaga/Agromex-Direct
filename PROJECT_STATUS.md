@@ -146,9 +146,17 @@ design assumes all three:
    ```
    as `vercel.json` and set `CRON_SECRET` (Vercel sends it as the bearer token automatically; the
    route accepts either `BRIEF_CRON_SECRET` or `CRON_SECRET`). Hobby projects allow one run per
-   day: use a daily schedule in UTC just after the delivery time (Central Time is UTC−5 in summer,
-   UTC−6 in winter — e.g. `"15 12 * * *"` for a 07:00 brief in summer) or use option A, which has
-   no such limit.
+   day, fired at any minute within the hour: use a daily schedule in UTC just after the delivery
+   time (Central Time is UTC−5 in summer, UTC−6 in winter — e.g. `"15 12 * * *"` for a 07:00
+   brief in summer) or use option A, which has no such limit.
+
+   **Vercel Hobby plan.** Option A (pg_cron) is unaffected by the plan: Supabase makes the calls;
+   Vercel only answers them (about 100 short requests a day). Keep **Fluid compute** on (Project
+   → Settings → Functions; it is the default for projects created after April 2025): with it a
+   Hobby function may run 300 s, without it 60 s, and Bob's chat route declares
+   `maxDuration = 120` — on the old compute mode the deploy fails with *"must have a maxDuration
+   between 1 and 60 for plan hobby"*. Vercel's fair-use rules reserve Hobby for non-commercial
+   personal use; a company's working tool belongs on Pro.
 5. **Turn it on** in Sheet 14 · Settings: recipients, time, timezone, switches → Save → *Generate &
    send me a test brief*. The next morning the card on `/projects` shows the brief and the
    Settings sheet shows the scheduler's check-ins.

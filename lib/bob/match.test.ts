@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { matchByName, matchProjects, pickProject } from "./match.ts";
+import { findLikelyDuplicate, matchByName, matchProjects, pickProject } from "./match.ts";
 
 const projects = [
   { id: "1", name: "Smith kitchen", number: 7, client_name: "J. Smith", address: "12 Maple St" },
@@ -35,6 +35,23 @@ test("client and address match when the name does not; nothing matches nothing",
   assert.equal(pick.kind, "one");
   assert.equal(pickProject(matchProjects("Sunrise Ranch", projects)).kind, "one");
   assert.equal(pickProject(matchProjects("Zebra", projects)).kind, "none");
+});
+
+test("findLikelyDuplicate flags a matching address or a near-exact name, not a loose one", () => {
+  const byAddress = findLikelyDuplicate("Maple St kitchen redo", "12 Maple St", projects);
+  assert.equal(byAddress?.reason, "address");
+  assert.equal(byAddress?.project.id, "1");
+
+  const byAddressCase = findLikelyDuplicate("Something else", "  12   maple st  ", projects);
+  assert.equal(byAddressCase?.reason, "address");
+
+  const byName = findLikelyDuplicate("MONARCH HOTEL RENOVATION", undefined, projects);
+  assert.equal(byName?.reason, "name");
+  assert.equal(byName?.project.id, "4");
+
+  assert.equal(findLikelyDuplicate("Totally new project", "999 Nowhere Ln", projects), null);
+  // a different lot number is a different project, not a duplicate of Lot 14
+  assert.equal(findLikelyDuplicate("Hampton Lot 15 build", undefined, projects), null);
 });
 
 test("matchByName ranks tasks by title", () => {

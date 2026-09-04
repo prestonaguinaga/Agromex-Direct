@@ -1,10 +1,11 @@
 import "server-only";
-import type { FileRow, ProjectStatus, ProjectSummaryRow, TaskRow } from "../../../data/database.types";
+import type { FileRow, Json, ProjectStatus, ProjectSummaryRow, TaskRow } from "../../../data/database.types";
 import { STATUS_LABELS } from "../../../data/task-labels";
 import { currentPhase, groupActivity, nextPhase } from "../../../data/progress";
+import { uid } from "../../../format";
 import { STATUS_TEXT, pct, projectFlags, projectHeadline, projectMoney, projectNumber, projectSchedule } from "../../digest";
 
-import { matchProjects } from "../../match";
+import { findLikelyDuplicate, matchByName, matchProjects } from "../../match";
 import { addDays, isYmd } from "../../time";
 import {
   loadActivity,
@@ -17,6 +18,7 @@ import {
   loadSubcontractors,
   loadTasks,
   listSummaries,
+  getSummary,
   profilesById,
   nameOf,
   type Member,
@@ -25,6 +27,18 @@ import { resolveProject } from "../resolve";
 import { PROJECT_PROPS, ToolError, bool, intIn, num, schema, str, truncate, type ToolCtx, type ToolDef } from "../types";
 
 const PROJECT_STATUSES: ProjectStatus[] = ["lead", "estimating", "active", "on_hold", "complete", "archived"];
+const PROJECT_TYPES = ["remodel", "new-build"] as const;
+
+/** Resolve a manager name to a member; null (not thrown) on no/ambiguous match — a project is still created without one. */
+function resolveManager(ctx: ToolCtx, members: Member[], query: string): { id: string; name: string } | null {
+  if (/^(me|myself|i)$/i.test(query.trim())) return { id: ctx.session.userId, name: ctx.session.displayName };
+  const active = members.filter((m) => m.isActive);
+  const m = matchByName(query, active.map((x) => ({ ...x, id: x.userId })), (x) => `${x.name} ${x.email ?? ""}`);
+  if (m.length === 0) return null;
+  const [top, second] = m;
+  if (top.score >= 60 && (!second || top.score - second.score >= 15 || top.score === 100)) return { id: top.project.userId, name: top.project.name };
+  return null;
+}
 
 export function taskLine(t: TaskRow, names: { member: (id: string | null) => string; sub: (id: string | null) => string }, today: string) {
   const who = names.member(t.assignee_id) || names.sub(t.subcontractor_id) || null;
@@ -84,6 +98,127 @@ function projectCard(s: ProjectSummaryRow, canMoney: boolean, now: Date) {
 }
 
 export const projectTools: ToolDef[] = [
+  {
+    name: "create_project",
+    description:
+      "Create a new project — through the same authorized service the New Project screen uses (a project shell with a blank estimate sheet, same defaults, same authorization). Only call this when the person clearly asks to create, make, start or add a project — never when they are only discussing or considering one. A name or an address is enough to start; everything else can be added later, including through follow-up commands once the project is created (it becomes the current project). Before creating, this checks for a likely duplicate (same address, or a near-identical name) and, if found, refuses with the existing project's details instead of creating one — tell the person and ask whether to open that one or create a new one anyway; only then call this again with force: true. To also set a budget or contract amount, call set_contract_amount next — it needs the person's confirmation, like any money change; do not put a budget figure in this tool.",
+    input_schema: schema({
+      name: { type: "string", description: "Project name. Falls back to the address when omitted." },
+      address: { type: "string" },
+      client_name: { type: "string", description: "Customer / client name" },
+      client_email: { type: "string" },
+      client_phone: { type: "string" },
+      project_type: { type: "string", enum: [...PROJECT_TYPES], description: "default remodel" },
+      status: { type: "string", enum: PROJECT_STATUSES, description: "default estimating — the same default the New Project screen uses" },
+      notes: { type: "string" },
+      manager: { type: "string", description: "Project manager's name, or 'me'" },
+      start_date: { type: "string", description: "YYYY-MM-DD" },
+      target_end_date: { type: "string", description: "YYYY-MM-DD" },
+      force: { type: "boolean", description: "Create even though a likely duplicate exists. Set true only after the person has said to create it anyway." },
+    }),
+    requires: ["projects.create"],
+    kind: "write",
+    status: "creating the project…",
+    execute: async (ctx, input) => {
+      const rawName = str(input, "name");
+      const address = str(input, "address");
+      const name = rawName ?? address;
+      if (!name) throw new ToolError("Give at least a project name or an address to create a project.");
+
+      const type = str(input, "project_type") as (typeof PROJECT_TYPES)[number] | undefined;
+      if (type && !PROJECT_TYPES.includes(type)) throw new ToolError(`project_type must be one of ${PROJECT_TYPES.join(", ")}`);
+      const status = str(input, "status") as ProjectStatus | undefined;
+      if (status && !PROJECT_STATUSES.includes(status)) throw new ToolError(`status must be one of ${PROJECT_STATUSES.join(", ")}`);
+      const startDate = str(input, "start_date");
+      if (startDate && !isYmd(startDate)) throw new ToolError("start_date must be YYYY-MM-DD");
+      const targetDate = str(input, "target_end_date");
+      if (targetDate && !isYmd(targetDate)) throw new ToolError("target_end_date must be YYYY-MM-DD");
+
+      const force = bool(input, "force") ?? false;
+      if (!force) {
+        const all = await listSummaries(ctx.session.sb);
+        const dup = findLikelyDuplicate(name, address, all);
+        if (dup) {
+          const p = dup.project;
+          throw new ToolError(
+            `A project that looks like the same one already exists: ${projectNumber(p)} "${p.name}"${p.address ? ` at ${p.address}` : ""} (${STATUS_TEXT[p.status]}). Ask the person whether to open that one, or create a new project anyway (pass force: true only if they say to create it anyway).`,
+            { duplicate: true, existing_project: { id: p.id, number: projectNumber(p), name: p.name, address: p.address || null, status: STATUS_TEXT[p.status] } },
+          );
+        }
+      }
+
+      const { sb, companyId } = ctx.session;
+      const pid = uid();
+      const payload = {
+        id: pid,
+        estimate_id: uid(),
+        company_id: companyId,
+        client_id: null,
+        project: {
+          name,
+          type: type ?? "remodel",
+          status: status ?? "estimating",
+          client_name: str(input, "client_name") ?? "",
+          client_phone: str(input, "client_phone") ?? "",
+          client_email: str(input, "client_email") ?? "",
+          address: address ?? "",
+          notes: str(input, "notes") ?? "",
+          plan_notes: "",
+        },
+        estimate: {},
+        sections: [],
+        items: [],
+        options: [],
+      };
+      // Same RPC the New Project screen calls (lib/data/projects.ts createProjectInDb) — security
+      // invoker, so this insert is checked by the projects_insert RLS policy exactly as the UI is.
+      const { data, error } = await sb.rpc("create_project", { p: payload as unknown as Json });
+      if (error) throw error;
+      const r = data as { project_id: string; existing: boolean };
+
+      const managerQuery = str(input, "manager");
+      let managerNote: string | null = null;
+      const patch: { manager_id?: string; start_date?: string; target_end_date?: string } = {};
+      if (managerQuery) {
+        const lookups = await nameLookups(ctx);
+        const resolved = resolveManager(ctx, lookups.members, managerQuery);
+        if (resolved) {
+          patch.manager_id = resolved.id;
+          managerNote = resolved.name;
+        } else {
+          managerNote = `couldn't match "${managerQuery}" to a team member — manager not set`;
+        }
+      }
+      if (startDate) patch.start_date = startDate;
+      if (targetDate) patch.target_end_date = targetDate;
+      if (patch.manager_id || patch.start_date || patch.target_end_date) {
+        const { error: uErr } = await sb.from("projects").update(patch).eq("id", r.project_id);
+        if (uErr) throw uErr;
+      }
+
+      // Re-read the row we just committed — the response reflects the real database state, not just echoed input.
+      const created = await getSummary(sb, r.project_id);
+      const finalName = created?.name ?? name;
+      const bits = [address && `at ${address}`, patch.manager_id && managerNote && `${managerNote} as manager`].filter(Boolean).join(", ");
+      return {
+        data: {
+          success: true,
+          project_id: r.project_id,
+          project_name: finalName,
+          number: created ? projectNumber(created) : null,
+          status: created ? STATUS_TEXT[created.status] : STATUS_TEXT[status ?? "estimating"],
+          route: `/projects/${r.project_id}`,
+          duplicate_warning: false,
+          manager_note: managerNote,
+          already_existed: r.existing,
+        },
+        event: `+ project "${finalName}" created${bits ? ` (${bits})` : ""}`,
+        refresh: ["projects"],
+        navigate: { href: `/projects/${r.project_id}`, label: finalName },
+        projectId: r.project_id,
+      };
+    },
+  },
   {
     name: "search_projects",
     description:

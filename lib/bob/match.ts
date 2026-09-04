@@ -85,6 +85,32 @@ export function pickProject<T extends MatchableProject>(matches: ProjectMatch<T>
   return { kind: "ambiguous", candidates: matches.slice(0, 5).map((m) => m.project) };
 }
 
+export interface DuplicateCandidate<T> {
+  project: T;
+  reason: "address" | "name";
+}
+
+/**
+ * Before creating a project: is there already one at this address, or with a
+ * near-identical name? Exact (normalized) address match, or a name match
+ * strong enough that a person would call it "the same project" (score >= 90:
+ * exact, joined-exact, or a prefix match) — not a loose keyword overlap.
+ */
+export function findLikelyDuplicate<T extends MatchableProject>(
+  name: string,
+  address: string | undefined,
+  projects: T[],
+): DuplicateCandidate<T> | null {
+  const addrNorm = address ? normalizeText(address) : "";
+  if (addrNorm) {
+    const byAddress = projects.find((p) => p.address && normalizeText(p.address) === addrNorm);
+    if (byAddress) return { project: byAddress, reason: "address" };
+  }
+  const [top] = matchProjects(name, projects);
+  if (top && top.score >= 90) return { project: top.project, reason: "name" };
+  return null;
+}
+
 /** Same idea for tasks, budget lines, members, subcontractors: best name match. */
 export function matchByName<T extends { id: string }>(query: string, rows: T[], nameOf: (r: T) => string): ProjectMatch<T>[] {
   const q = normalizeText(query);

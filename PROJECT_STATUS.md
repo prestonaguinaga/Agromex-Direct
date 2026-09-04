@@ -1,15 +1,117 @@
 # Monarch Admin — Project Status
 
-**Phase:** 4 · Bob's Daily Brief — **complete, builds green**
-(Phase 3 · Bob, the site assistant — complete; Phase 2 · construction project management — complete;
-Phase 1 · backend foundation — complete)
-**Branch:** `claude/bob-monarch-admin-assistant-q0hu7d`
-**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is this phase; §8 was phase 3)
-**Last updated:** 2026-09-02
+**Phase:** 5 · Bob creates projects — **complete, builds green**
+(Phase 4 · Bob's Daily Brief — complete; Phase 3 · Bob, the site assistant — complete;
+Phase 2 · construction project management — complete; Phase 1 · backend foundation — complete)
+**Branch:** `claude/bob-create-project-tool-fi91im`
+**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is phase 4; this phase is not yet in that plan doc)
+**Last updated:** 2026-09-04
 
 ---
 
-## 0. Phase 4 — Bob's Daily Brief (a scheduled, server-side process)
+## Phase 5 — Bob creates projects
+
+Bob previously had no way to create a project — every other write (tasks, notes, budget lines, the
+contract amount, status/date changes) had a tool, but "create a project" fell through to a plain
+refusal. This phase adds one new tool, `create_project`, so a person can create a project by
+talking to Bob ("create a new project called Hampton Hotel Renovation at 123 Main Street") with the
+same authorization, defaults and business logic as the New Project screen — not a second,
+parallel creation system.
+
+**What it does.** `lib/bob/server/tools/projects.ts`'s `create_project`:
+
+1. Requires only a name **or** an address (falls back to using the address as the name); every
+   other field — client name/phone/email, project type, status, notes, manager, start/target
+   dates — is optional and left at the app's own default when omitted (status `estimating`, type
+   `remodel` — the same defaults `create_project(jsonb)` already used for the UI).
+2. Checks for a likely duplicate first — an exact (normalized) address match, or a name match
+   strong enough to be "the same project" (`lib/bob/match.ts`'s new `findLikelyDuplicate`, unit
+   tested in `lib/bob/match.test.ts`) — and if one is found, **refuses** with the existing
+   project's id/number/name/address/status so Bob can ask "open that one, or create another?"
+   instead of guessing. Creating anyway is a second call with `force: true`, only after the person
+   says to.
+3. Calls the **same RPC** the New Project screen calls — `create_project(jsonb)`
+   (`supabase/migrations/0002_projects_estimates.sql`, `security invoker`, unchanged) — through
+   the person's own RLS-scoped Supabase client. This is not a re-implementation: it is the
+   identical database function, so authorization (`projects.create`, the same capability that
+   shows "+ New project" in the UI), defaults, idempotency and the resulting row (project +
+   its first, blank estimate) are guaranteed identical to a project made by hand.
+4. If a manager name or dates were given, patches them with one follow-up `update` — the same
+   statement shape the Overview tab's `updateProjectFields` issues, checked by the same
+   `projects_update` RLS policy (which already lets the creator edit their own new project via
+   `created_by = auth.uid()`, whether or not their role holds `projects.edit` — verified directly
+   against Postgres, see Verification below).
+5. Re-reads the committed row (`getSummary`) before answering, so the tool's result reflects the
+   real database state — id, number, name, status, route — not just echoed input, and returns a
+   structured result (`success`, `project_id`, `project_name`, `number`, `route`,
+   `duplicate_warning`) rather than anything Bob has to infer from prose.
+6. Returns `refresh: ["projects"]` and `navigate: {href: "/projects/<id>", ...}` like every other
+   write tool, so the open Projects list reloads and the chat panel navigates to the new project —
+   which also means the *next* message's page context is that project, so "set the budget to
+   $125,000" or "add a note that demo starts Monday" right afterward apply to it without the
+   person naming it again (`components/BobChat.tsx` rebuilds `context` from the current route on
+   every message; no new plumbing needed).
+7. Deliberately does **not** take a budget/contract figure. `lib/bob/knowledge.ts`'s brief now
+   tells Bob to call the existing `set_contract_amount` tool next when a person gives a budget
+   alongside a new project — that tool is already guarded (money: always needs confirmation), so
+   "create a project with a $185,000 budget" still asks for confirmation on the money part, exactly
+   like any other budget change, with no new financial logic and no duplicate estimating system.
+8. The database's own `projects_insert` RLS policy (`authz.has_cap(company_id, 'projects.create')`)
+   is the real gate, re-checked independently of the tool's `requires: ["projects.create"]` — a
+   role without it (e.g. employee) cannot create a project even by calling the tool directly.
+9. Creation is stamped in `audit_log` exactly like a UI-made project, with `source = 'bob'` via the
+   `x-app-source` header Bob's server client already sends — no new plumbing.
+
+**Files changed:** `lib/bob/match.ts` (+ `.test.ts`) — new pure `findLikelyDuplicate`;
+`lib/bob/server/tools/projects.ts` — the new tool + a small local `resolveManager` helper;
+`lib/bob/knowledge.ts` — one line added to the tool inventory sentence, plus guidance on the
+explicit-create-command requirement, duplicate handling, and chaining to `set_contract_amount`.
+Nothing else — `registry.ts`, `guard.ts`, `confirm.ts`, `resolve.ts`, `data.ts`, `routes.ts` and
+every other tool are untouched.
+
+**No database or RLS changes.** The RPC, the `projects_insert`/`projects_update` policies, the
+`projects.create` capability (already granted by default to admin, project_manager and estimator —
+the same roles that see "+ New project" today) all already existed and are exercised by
+`supabase/tests/policies.sql` (unchanged, still passing).
+
+**What it does not do yet, on purpose.** No `create_estimate` tool — the person's other request
+("create a project with a $250,000 preliminary estimate") maps today to setting the contract
+amount via the existing `set_contract_amount` tool, not to generating a priced estimate sheet;
+building an actual estimate from a natural-language scope is the existing job-intake flow on the
+Estimate tab (`lib/bob/knowledge.ts`'s `ESTIMATOR_EDIT` block), already available once inside the
+project, not something this phase changes. `update_project` (name/status/dates/client fields after
+creation), `create_estimate`, and further budget-line tools follow the same registry pattern and
+are natural next additions, out of scope here.
+
+### Verification (2026-09-04)
+
+`npm install` (dependencies were not yet installed in this environment) · `npm run typecheck` —
+clean · `npm run lint` — 0 errors (the same 7 pre-existing warnings) · `npm run test` — 45 unit
+tests passing (44 pre-existing + the new `findLikelyDuplicate` cases) · `npm run build` — every
+route compiles, including `/api/bob`. `npm run db:test` (`supabase/tests/run-local.sh`) — every
+migration applies cleanly and every existing RLS policy scenario still passes on a fresh local
+PostgreSQL 16, unchanged (no migrations were touched by this phase).
+
+Additionally, because this environment has no live Supabase project or `ANTHROPIC_API_KEY` (so a
+live "type into Bob in a browser" pass isn't possible here — the same limitation prior phases
+note), the tool's actual database calls were exercised directly against a real, throwaway
+PostgreSQL 16 with the real migrations and RLS policies (same harness as `policies.sql`, run
+ad hoc, not committed): a project manager creating a project with a name only got the real app
+defaults (`status = estimating`, `type = remodel`, blank address) and a real `audit_log` insert
+row; a project with several fields (address, client, explicit status) persisted correctly and a
+follow-up `update` (the same one `create_project` issues for manager/dates) set them; an employee
+(no `projects.create`) was denied with Postgres error `42501` on the raw insert, not merely
+filtered at the app layer; an estimator (`projects.create` but not `projects.edit`) could still
+create a project and then patch its own `manager_id` via the `created_by = auth.uid()` fallback —
+the exact mechanism the tool's follow-up update relies on; and a **second, independent database
+connection** (simulating a page refresh or a login from another device) read every created project
+back correctly through `project_summary` — the same view the Projects page and Bob's other tools
+read — confirming the rows are durably persisted, not session state. Not exercised: the live model
+loop itself (tool selection from natural language, the `needs_confirmation` UI card, the browser's
+`router.push` on `navigate` — these are existing, previously-verified plumbing this phase reuses
+unchanged, per §1.10's prior verification).
+
+---
 
 Every morning at the company's delivery time Bob writes a brief for the owner and project
 managers — without anyone's browser being open. A scheduler calls the app on the server; the
@@ -296,7 +398,8 @@ Tools are offered to the model only when the person holds one of the listed capa
 | Group | Tool | Needs | What it does |
 |---|---|---|---|
 | Navigation | `navigate_to` | — (destination's own capability) | Opens `dashboard`, `projects`, `project`/`overview`, `estimator`/`estimate`, `budget`, `progress`, `tasks`/`checklists`, `plans`/`files`, `photos`, `notes`, `activity`, `team`, `subcontractors`, `guide`, `bob`; `applications` refuses with an explanation (not built) |
-| Projects | `search_projects` | — | Fuzzy lookup by name, client, address, `P-0007` |
+| Projects | `create_project` | `projects.create` | Creates a project through the same RPC the New Project screen calls (phase 5, above) — name/address minimum, everything else optional and defaulted the same way the app defaults it. Refuses (does not guard/confirm) on a likely duplicate address or near-identical name unless told to create it anyway |
+| | `search_projects` | — | Fuzzy lookup by name, client, address, `P-0007` |
 | | `list_projects` | — | `all` · `open` · `active` · `over_budget` · `behind_schedule` · `overdue_tasks` · `complete` · `on_hold` |
 | | `get_project_summary` | — | The full "how are we doing" digest |
 | | `get_project_progress` | — | Phases, dates, checklist completion, figures, schedule |

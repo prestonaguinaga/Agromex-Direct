@@ -14,6 +14,7 @@ import { FilesPanel } from "@/components/project/FilesPanel";
 import { NotesPanel } from "@/components/project/NotesPanel";
 import { OverviewPanel } from "@/components/project/OverviewPanel";
 import { PhotosPanel } from "@/components/project/PhotosPanel";
+import { PlanPanel } from "@/components/project/PlanPanel";
 import { ProgressPanel } from "@/components/project/ProgressPanel";
 import { ProjectDataProvider } from "@/components/project/ProjectContext";
 import { SaveIndicator } from "@/components/project/SaveIndicator";
@@ -25,13 +26,14 @@ import { useProject } from "@/lib/data/use-project";
 import { computeTotals, money } from "@/lib/format";
 import { mailtoHref } from "@/lib/sheetText";
 
-type Tab = "overview" | "budget" | "estimate" | "progress" | "files" | "photos" | "tasks" | "notes" | "activity";
+type Tab = "overview" | "budget" | "estimate" | "plan" | "progress" | "files" | "photos" | "tasks" | "notes" | "activity";
 type SheetTab = "sheet" | "estimator" | "info";
 
 const TABS: { id: Tab; label: string; short: string; cap?: string }[] = [
   { id: "overview", label: "Overview", short: "Overview" },
   { id: "budget", label: "Budget", short: "Budget", cap: "budgets.view" },
   { id: "estimate", label: "Estimate", short: "Estimate", cap: "estimates.view" },
+  { id: "plan", label: "Plan", short: "Plan" },
   { id: "progress", label: "Progress", short: "Progress" },
   { id: "files", label: "Plans & files", short: "Plans", cap: "files.view" },
   { id: "photos", label: "Photos", short: "Photos", cap: "files.view" },
@@ -200,6 +202,7 @@ function ProjectWorkspace() {
                 {sheetTab === "info" && <InfoPanel project={project} update={update} />}
               </>
             )}
+            {tab === "plan" && <PlanPanel />}
             {tab === "progress" && <ProgressPanel totals={canSeeMoney ? totals : null} onOpenTask={goTask} />}
             {tab === "files" && <FilesPanel />}
             {tab === "photos" && <PhotosPanel />}

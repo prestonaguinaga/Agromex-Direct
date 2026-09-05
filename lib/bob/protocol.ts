@@ -12,9 +12,10 @@ export type BobTab =
   | "photos"
   | "tasks"
   | "notes"
-  | "activity";
+  | "activity"
+  | "plan";
 
-export const BOB_TABS: BobTab[] = ["overview", "budget", "estimate", "progress", "files", "photos", "tasks", "notes", "activity"];
+export const BOB_TABS: BobTab[] = ["overview", "budget", "estimate", "plan", "progress", "files", "photos", "tasks", "notes", "activity"];
 
 /** Where the person is in the app when they talk to Bob. */
 export interface BobContext {

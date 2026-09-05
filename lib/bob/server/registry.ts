@@ -10,6 +10,7 @@ import { fileTools } from "./tools/files";
 import { memoryTools } from "./tools/memory";
 import { navigationTools } from "./tools/navigation";
 import { noteTools } from "./tools/notes";
+import { planTools } from "./tools/plan";
 import { projectTools } from "./tools/projects";
 import { taskTools } from "./tools/tasks";
 import { teamTools } from "./tools/team";
@@ -31,6 +32,7 @@ export const ALL_TOOLS: ToolDef[] = [
   ...activityTools,
   ...teamTools,
   ...estimateTools,
+  ...planTools,
   ...briefTools,
   ...memoryTools,
 ];

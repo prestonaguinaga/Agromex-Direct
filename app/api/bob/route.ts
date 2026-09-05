@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   const model = bobModel(session.settings);
   const defs = toolsFor(session.can);
   const web = session.can("estimates.edit");
-  const stableBrief = buildStableBrief({ estimatesView: session.can("estimates.view"), estimatesEdit: session.can("estimates.edit"), web });
+  const stableBrief = buildStableBrief({ estimatesView: session.can("estimates.view"), estimatesEdit: session.can("estimates.edit"), web, plansEdit: session.can("plans.edit") });
   const dynamicContext = await buildDynamicContext({ session, context, now, today, preferences, conversationSummary: conversation.summary || null });
 
   const abort = new AbortController();

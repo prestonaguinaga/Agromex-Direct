@@ -15,6 +15,7 @@ export type Destination =
   | "estimator"
   | "estimate"
   | "budget"
+  | "plan"
   | "progress"
   | "tasks"
   | "checklists"
@@ -52,6 +53,7 @@ export const DESTINATIONS: Record<Destination, DestinationSpec> = {
   estimator: { label: "Estimate", tab: "estimate", requires: "estimates.view", aliases: ["estimator", "quote sheet", "quote", "sheet"] },
   estimate: { label: "Estimate", tab: "estimate", requires: "estimates.view", aliases: ["estimate"] },
   budget: { label: "Budget", tab: "budget", requires: "budgets.view", aliases: ["budget", "money", "costs"] },
+  plan: { label: "Plan", tab: "plan", aliases: ["house plan", "floor plan", "plan view", "layout"] },
   progress: { label: "Progress", tab: "progress", aliases: ["progress", "schedule", "phases"] },
   tasks: { label: "Tasks & checklist", tab: "tasks", aliases: ["tasks", "task list", "to-do"] },
   checklists: { label: "Tasks & checklist", tab: "tasks", aliases: ["checklist", "checklists", "punch list"] },

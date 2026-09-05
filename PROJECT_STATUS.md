@@ -1,12 +1,101 @@
 # Monarch Admin — Project Status
 
-**Phase:** 6 · Bob reads uploaded plans — **complete, builds green**
-(Phase 5 · Bob creates projects — complete; Phase 4 · Bob's Daily Brief — complete; Phase 3 · Bob,
-the site assistant — complete; Phase 2 · construction project management — complete; Phase 1 ·
-backend foundation — complete)
+**Phase:** 7 · House plans, stage one — **complete, builds green**
+(Phase 6 · Bob reads uploaded plans — complete; Phase 5 · Bob creates projects — complete; Phase 4 ·
+Bob's Daily Brief — complete; Phase 3 · Bob, the site assistant — complete; Phase 2 · construction
+project management — complete; Phase 1 · backend foundation — complete)
 **Branch:** `claude/bob-create-project-tool-fi91im`
-**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is phase 4; phases 5–6 are not yet in that plan doc)
-**Last updated:** 2026-09-04
+**Plan:** [`docs/MONARCH-ADMIN-PLAN.md`](docs/MONARCH-ADMIN-PLAN.md) (§9 of the plan is phase 4; phases 5–7 are not yet in that plan doc)
+**Last updated:** 2026-09-05
+
+---
+
+## Phase 7 — House plans, stage one: the model, the floor plans, the code check, the DXF
+
+The owner wants to describe a building to Bob and get real plans back — editable by talking,
+code-checked, client-presentable, and importable into Home Designer / Chief Architect — and
+eventually a full permit set. Stage one builds the thing that makes all of that possible without
+drift: **the plan is a structured model, not a drawing.** Bob edits the model through validated
+operations; the floor plans, schedules, code report and DXF are regenerated from it every time.
+"Move the bathroom window 2 ft north" changes exactly one number, and nothing else can go wrong.
+
+### 7.1 The model (`lib/plan/`, pure, 14 unit tests)
+
+| Module | What it is |
+|---|---|
+| `model.ts` | Types: `HousePlan → levels → rooms / openings / stairs`, roof, settings (address, code edition, wall thicknesses, setbacks, insulation, foundation). Units inches; rooms are axis-aligned rectangles to **wall centerlines**; origin south-west. Standard sizes (3-0 door, 36×60 egress window…) and `ftIn()` |
+| `geometry.ts` | Walls are **derived from room edges**: an edge bordered by one room is exterior, by two is interior — so resizing a room moves its walls and nothing has to be redrawn. Footprint, overall outside dimensions, net room size and area, opening spans, stair math (risers = ⌈floor-to-floor ÷ 7¾⌉), whole-building totals for the takeoff |
+| `ops.ts` | Every change is one of 19 typed operations (`add_room`, `resize_room`, `add_opening`, `move_opening`, `add_stair`, `set_roof`…), validated against the current model before it is applied: no overlapping rooms, an opening must sit within one wall of its room's side with 3" to each end, windows only on exterior walls, cased openings only on interior walls, a stair must fit its run plus a 36" landing, a resize that would strand an opening or a stair is refused. Batches are atomic — all or nothing, with the reason |
+| `code.ts` | The code check: 2021 IRC / 2021 IECC, zone 3A. Envelope R-values and window U/SHGC, room minimums (R304), ceilings (R305), hallway width (R311.6), every room has a way in, bedroom emergency escape with net-clear math by window type (R310), the 36" egress door (R311.2), stair rise/tread/width (R311.7), light and ventilation (R303), bathroom fan and tempered glazing (R303.3, R308.4), fire separation from the property line (R302.1), smoke/CO alarms to show (R314/R315), the DFW two-story-on-plain-slab warning. **Zoning is deliberately not a rule** — it is per city and belongs on the checklist Bob gives |
+| `schedules.ts` | Door, window, cased-opening and room schedules with stable marks (D1, W3, O1) shared by the drawing and the tables |
+| `draw.ts` | One drawing model — wall faces with openings cut and jambs, dashed centerlines, door swings by hinge and swing, window frames and glass line, cased openings, stair treads with the UP arrow and riser count, room labels with net size and area, dimension strings (segments + overall, north and east), north arrow, title with the code summary |
+| `dxf.ts` | DXF **R12 (AC1009)**, inches, AIA layers (`A-WALL`, `A-WALL-CNTR`, `A-DOOR`, `A-GLAZ`, `A-FLOR-STRS`, `A-ANNO-DIMS`, `A-AREA-IDEN`…) — the flavour Home Designer imports as CAD to trace. One file per level, and one with every level |
+| `svg.ts` | The same primitives as SVG for the Plan tab, colours from CSS variables |
+| `fixtures.ts` | The 20×20 guest house built the way Bob builds one — 26 operations — used by the tests and as the worked example |
+
+### 7.2 Storage, authorization and concurrency (migration 0010)
+
+`house_plans` — one row per project (`model` jsonb, `version`, last code counts), RLS: read follows
+project visibility like notes and tasks; write needs the new **`plans.edit`** capability (admin,
+project manager and estimator by default). Every save goes through **`save_house_plan()`**
+(security invoker, RLS applies), which refuses a write against a version other than the one the
+caller read (`40001`) — so Bob and a second editor can never clobber each other — and writes a
+plain-English **activity line** for the change (`log_activity`, stamped `bob` or `ui`). The table
+is in the realtime publication so the Plan tab reloads when Bob saves. `supabase/tests/policies.sql`
+gains a block: first save is v1, a stale save is refused, the estimator edits, the assigned employee
+reads but cannot write, the outsider sees nothing.
+
+### 7.3 Bob's tools (`lib/bob/server/tools/plan.ts`)
+
+| Tool | Needs | What it does |
+|---|---|---|
+| `get_house_plan` | — | The whole model with ids, net sizes, marks, stair math, totals, schedules counts and the code report — Bob is told to call it before every edit and to use its ids, never a guess |
+| `create_house_plan` | `plans.edit` | A batch of operations applied to an empty plan, atomically; saved as v1 with the code check; navigates to the Plan tab |
+| `edit_house_plan` | `plans.edit` | A batch of operations, atomic and validated. **Structural changes stop for Confirm** — removing rooms or levels, adding a level, or anything that changes the building footprint (the guard dry-runs the ops and compares footprints); windows, doors, room names and sizes inside the shell, stairs, roof and settings apply at once. A refused edit changes nothing and says why |
+| `check_house_plan` | — | The code report with every reference and every pass |
+| `export_house_plan_dxf` | `plans.edit` + `files.upload` | Writes the DXF files into the project's **Plans & files** (bucket `plans`, kind `plan`) through the person's own client — the same path a person's upload takes — so the owner downloads them from the app and Bob can read them back with `view_plan` |
+
+`navigate_to plan` opens the tab. The brief (`HOUSE_PLANS` block, offered to people with `plans.edit`)
+teaches the design method (centerline rectangles that tile the footprint, the stair first, standard
+sizes, a door for every room), the edit protocol (ids from `get_house_plan`, one instruction → one
+call, refusals mean nothing changed), what needs Confirm, and — plainly — **what a full permit set
+contains and which sheets do not exist yet**.
+
+### 7.4 The Plan tab (`components/project/PlanPanel.tsx`)
+
+Floor plan per level (SVG, wall centerlines switchable), the schedules, the code check grouped as
+fails / warnings / must-show / passes, totals, and **DXF downloads** (per level and all levels),
+live-reloading on every save. Read-only on purpose in stage one: every change goes through Bob so it
+is validated and logged. Empty state tells the person what to ask Bob.
+
+### 7.5 What stage one does not do (next stages, nothing here has to be redone)
+
+Exterior elevations and building sections (derivable from the same model — heights, roof and
+openings are already there); roof plan; framing and foundation *layouts* (the engineered foundation
+and structural details in DFW must still come from a licensed engineer's stamp — Bob's job is to
+hand that engineer a complete, correct set); electrical plan; a PDF sheet set with title block,
+line weights and hatching (the DXF and on-screen SVG come from the same primitives, so a PDF
+renderer is a third serializer, not a rewrite); L-shaped rooms (rooms are rectangles — an L is two
+rooms with a cased opening); editing the model directly in the tab; feeding `planTotals()` into
+`estimateHouse()` so the takeoff uses real wall lengths instead of the square-plan approximation.
+
+### 7.6 Verification (2026-09-05)
+
+`npm run typecheck` — clean · `npm run lint` — 0 errors (the same 7 pre-existing warnings) ·
+`npm run test` — 59 passing (45 + 14 new: the fixture tiles its footprint and reads 20'-0" outside;
+walls derive exterior/interior correctly; overlaps, over-long openings, interior windows and
+corner-spanning openings are refused; a resize that strands a window or a stair is refused and the
+original is untouched; 8' + 12" → 14 risers under 7¾"; the fixture has zero code fails and loses
+bedroom egress when its windows become fixed; envelope and egress-door rules fire; net-clear math
+is style-aware; schedule marks are stable; totals land near 800 sf and 155 LF of exterior wall; the
+DXF is a valid R12 document with layers, 40+ lines, two door-swing arcs on level 1 and an EOF; the
+SVG labels every room; an empty plan draws a placeholder). `npm run build` — every route compiles.
+`npm run db:test` — migration 0010 applies and every policy scenario passes, including the new
+house-plans block. The fixture's two levels were rendered to SVG and screenshotted once to check the
+drawing by eye. Not exercisable here (no Supabase project / model key): a live Bob turn designing a
+plan from a sentence, and the DXF import into Home Designer itself — the R12 structure follows the
+spec, and the file is plain text, but "it opens in HD 2015 and the layers land" is the owner's
+first test.
 
 ---
 

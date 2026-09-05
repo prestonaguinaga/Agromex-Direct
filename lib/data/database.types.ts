@@ -585,6 +585,23 @@ export interface MyContext {
   capabilities: string[];
 }
 
+export type HousePlanRow = {
+  id: string;
+  company_id: string;
+  project_id: string;
+  title: string;
+  /** lib/plan/model.ts HousePlan, stored as JSON. */
+  model: Json;
+  version: number;
+  code_fails: number;
+  code_warns: number;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
+  deleted_at: string | null;
+};
+
 type Table<R> = { Row: R; Insert: Partial<R>; Update: Partial<R>; Relationships: never[] };
 
 export type Database = {
@@ -622,6 +639,7 @@ export type Database = {
       daily_brief_deliveries: Table<DailyBriefDeliveryRow>;
       leads: Table<LeadRow>;
       subcontractor_applications: Table<SubcontractorApplicationRow>;
+      house_plans: Table<HousePlanRow>;
     };
     Views: {
       project_summary: { Row: ProjectSummaryRow; Relationships: never[] };
@@ -634,6 +652,19 @@ export type Database = {
       my_context: { Args: Record<string, never>; Returns: Json };
       apply_estimate_changes: { Args: { p: Json }; Returns: Json };
       create_project: { Args: { p: Json }; Returns: Json };
+      save_house_plan: {
+        Args: {
+          p_project_id: string;
+          p_expected_version: number;
+          p_model: Json;
+          p_title?: string | null;
+          p_summary?: string | null;
+          p_code_fails?: number;
+          p_code_warns?: number;
+          p_source?: string | null;
+        };
+        Returns: HousePlanRow;
+      };
       log_activity: {
         Args: {
           p_project_id: string | null;

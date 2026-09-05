@@ -492,6 +492,39 @@ end $$;
 select test.expect_error(
   format('insert into public.leads (company_id, name) values (%L, ''Spoof'')', test.u('CID')), '42501');
 
+-- ── House plans: plans.edit writes, anyone on the project reads, stale saves are refused ──
+select test.as_user(test.u('A'));
+do $$ declare r public.house_plans; begin
+  assert (public.my_context()->'capabilities') ? 'plans.edit', 'owner has plans.edit';
+  r := public.save_house_plan(test.u('PID'), 0, '{"schema":1,"title":"T","levels":[]}'::jsonb, 'Test plan', 'Bob created the plan', 0, 0, 'bob');
+  assert r.version = 1, 'first save is version 1';
+  r := public.save_house_plan(test.u('PID'), 1, '{"schema":1,"levels":[{"id":"l1"}]}'::jsonb, null, '+ Level 1', 0, 0, 'bob');
+  assert r.version = 2, 'second save bumps to 2';
+  assert r.title = 'Test plan', 'null title keeps the old one';
+  assert exists (select 1 from public.audit_log where entity_type = 'house_plans' and action = 'event' and source = 'bob' and summary = '+ Level 1'), 'plan edits land in activity, stamped via Bob';
+end $$;
+select test.expect_error(
+  format('select public.save_house_plan(%L, 1, ''{}''::jsonb, null, ''stale write'')', test.u('PID')), '40001');
+-- B (estimator) holds plans.edit by default; C (assigned employee) reads the plan but cannot write it.
+select test.as_user(test.u('B'));
+do $$ declare r public.house_plans; begin
+  assert (select count(*) from public.house_plans where project_id = test.u('PID')) = 1, 'estimator reads the plan';
+  r := public.save_house_plan(test.u('PID'), 2, '{"schema":1,"levels":[]}'::jsonb, null, 'estimator edit');
+  assert r.version = 3, 'estimator edits the plan';
+end $$;
+select test.as_user(test.u('C'));
+do $$ begin
+  assert (select count(*) from public.house_plans where project_id = test.u('PID')) = 1, 'assigned employee reads the plan';
+  update public.house_plans set title = 'hacked' where project_id = test.u('PID');
+  assert (select title from public.house_plans where project_id = test.u('PID')) = 'Test plan', 'employee cannot edit the plan (RLS filters the update)';
+end $$;
+select test.expect_error(
+  format('select public.save_house_plan(%L, 3, ''{}''::jsonb, null, ''employee write'')', test.u('PID')), '42501');
+select test.as_user(test.u('D'));
+do $$ begin
+  assert (select count(*) from public.house_plans) = 0, 'outsider sees no plans';
+end $$;
+
 -- ── Soft delete hides everything downstream ──────────────────────────────────
 select test.as_user(test.u('A'));
 update public.projects set deleted_at = now() where id = test.u('PID');
